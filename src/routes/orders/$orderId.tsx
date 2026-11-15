@@ -7,7 +7,6 @@ import { requireAuth } from '@/features/auth/route-guard'
 import { useCancelOrder, useOrder } from '@/features/orders/queries'
 import { usePayOrder } from '@/features/payments/queries'
 import { useOrderStream } from '@/features/realtime/use-order-stream'
-import { ApiError } from '@/lib/errors'
 import { ORDER_STATUS_VARIANT } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { formatCurrency } from '@/lib/utils'
@@ -71,18 +70,6 @@ function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {(pay.isError || cancel.isError) && (
-        <p role="alert" className="text-sm text-destructive">
-          {pay.isError
-            ? pay.error instanceof ApiError
-              ? pay.error.detail
-              : 'Payment failed'
-            : cancel.error instanceof ApiError
-              ? cancel.error.detail
-              : 'Could not cancel'}
-        </p>
-      )}
 
       <div className="flex flex-wrap gap-2">
         {payAction && (

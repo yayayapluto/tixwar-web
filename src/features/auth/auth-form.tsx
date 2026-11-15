@@ -2,24 +2,20 @@ import { type FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ApiError } from '@/lib/errors'
 
 export function AuthForm({
   mode,
   submitLabel,
   onSubmit,
   isPending,
-  error,
 }: {
   mode: 'login' | 'register'
   submitLabel: string
   onSubmit: (email: string, password: string) => void
   isPending: boolean
-  error: unknown
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const message = error instanceof ApiError ? error.detail : null
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -50,11 +46,6 @@ export function AuthForm({
           required
         />
       </div>
-      {message && (
-        <p role="alert" className="text-sm text-destructive">
-          {message}
-        </p>
-      )}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Loading…' : submitLabel}
       </Button>

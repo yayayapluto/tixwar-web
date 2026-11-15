@@ -1,19 +1,18 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthForm } from '@/features/auth/auth-form'
-import { useRegister, useSession } from '@/features/auth/use-auth'
+import { useRegister } from '@/features/auth/use-auth'
+import { getSession } from '@/lib/auth'
 
 export const Route = createFileRoute('/register')({
+  beforeLoad: () => {
+    if (getSession()) throw redirect({ to: '/events' })
+  },
   component: RegisterPage,
 })
 
 function RegisterPage() {
   const navigate = useNavigate()
-  const session = useSession()
   const register = useRegister()
-
-  if (session) {
-    throw redirect({ to: '/events' })
-  }
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-8">
@@ -30,7 +29,6 @@ function RegisterPage() {
         mode="register"
         submitLabel="Create account"
         isPending={register.isPending}
-        error={register.error}
         onSubmit={(email, password) =>
           register.mutate({ email, password }, { onSuccess: () => navigate({ to: '/events' }) })
         }

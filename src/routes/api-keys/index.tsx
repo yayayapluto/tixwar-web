@@ -14,7 +14,6 @@ import {
   useRevokeApiKey,
 } from '@/features/api-keys/queries'
 import { requireAuth } from '@/features/auth/route-guard'
-import { ApiError } from '@/lib/errors'
 import { formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/api-keys/')({
@@ -103,11 +102,6 @@ function ApiKeysPage() {
               {create.isPending ? 'Creating…' : 'Create'}
             </Button>
           </form>
-          {create.isError && (
-            <p role="alert" className="mt-2 text-sm text-destructive">
-              {create.error instanceof ApiError ? create.error.detail : 'Could not create key'}
-            </p>
-          )}
         </CardContent>
       </Card>
 

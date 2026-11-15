@@ -1,24 +1,23 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthForm } from '@/features/auth/auth-form'
-import { useLogin, useSession } from '@/features/auth/use-auth'
+import { useLogin } from '@/features/auth/use-auth'
+import { getSession } from '@/lib/auth'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
     if (typeof search.redirect === 'string') return { redirect: search.redirect }
     return {}
   },
+  beforeLoad: ({ search }) => {
+    if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
+  },
   component: LoginPage,
 })
 
 function LoginPage() {
   const navigate = useNavigate()
-  const session = useSession()
   const login = useLogin()
   const { redirect: redirectTo } = Route.useSearch()
-
-  if (session) {
-    throw redirect({ to: redirectTo ?? '/events' })
-  }
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-8">
@@ -35,7 +34,6 @@ function LoginPage() {
         mode="login"
         submitLabel="Log in"
         isPending={login.isPending}
-        error={login.error}
         onSubmit={(email, password) =>
           login.mutate(
             { email, password },
