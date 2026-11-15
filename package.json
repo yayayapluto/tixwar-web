@@ -1,0 +1,38 @@
+{
+  "name": "tixwar-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "biome check .",
+    "typecheck": "tsc -b --noEmit",
+    "api:gen": "openapi-ts -i ../api/docs/openapi.json -o src/lib/client -c @hey-api/client-fetch -p @tanstack/react-query && bun scripts/sync-types.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "0.13.1",
+    "@tanstack/react-query": "5.107.1",
+    "@tanstack/react-router": "1.170.46",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.73.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.7",
+    "@hey-api/openapi-ts": "0.99.0",
+    "@tailwindcss/vite": "4.3.5",
+    "@tanstack/router-plugin": "1.169.0",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "5.9.3",
+    "vite": "8.3.8"
+  }
+}
