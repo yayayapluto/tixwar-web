@@ -15,7 +15,6 @@ import {
   useDebugLoad,
   useDebugStream,
 } from '@/features/debug/queries'
-import { ApiError } from '@/lib/errors'
 
 export const Route = createFileRoute('/debug/stream')({
   beforeLoad: () => {
@@ -150,11 +149,6 @@ function DebugPage() {
               <Zap className="size-4" aria-hidden="true" />
               {load.isPending ? 'Running…' : 'Run load'}
             </Button>
-            {load.isError && (
-              <p role="alert" className="text-sm text-destructive">
-                {load.error instanceof ApiError ? load.error.detail : 'Load failed'}
-              </p>
-            )}
           </CardContent>
         </Card>
 
@@ -216,11 +210,6 @@ function DebugPage() {
             >
               Apply chaos
             </Button>
-            {chaos.isError && (
-              <p role="alert" className="text-sm text-destructive">
-                {chaos.error instanceof ApiError ? chaos.error.detail : 'Chaos failed'}
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>

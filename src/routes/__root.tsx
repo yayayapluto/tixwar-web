@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { LogOut, Moon, Sun, Ticket } from 'lucide-react'
+import { Toaster } from '@/components/toaster'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useLogout, useSession } from '@/features/auth/use-auth'
 import { ThemeProvider, useTheme } from '@/features/theme/theme-context'
@@ -91,6 +92,7 @@ function RootComponent() {
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
             <Outlet />
           </main>
+          <Toaster />
         </div>
       </ThemeProvider>
     </QueryClientProvider>

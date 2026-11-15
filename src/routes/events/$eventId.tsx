@@ -10,7 +10,6 @@ import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
 import { useStockStream } from '@/features/realtime/use-stock-stream'
-import { ApiError } from '@/lib/errors'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/$eventId')({
@@ -78,30 +77,9 @@ function TierCard({ tier }: { tier: TicketTier }) {
             </Button>
           </div>
         )}
-        {createOrder.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            {errorText(createOrder.error)}
-          </p>
-        )}
       </CardContent>
     </Card>
   )
-}
-
-function errorText(error: unknown): string {
-  if (!(error instanceof ApiError)) return 'Could not place order'
-  switch (error.code) {
-    case 'SOLD_OUT':
-      return 'This tier is sold out.'
-    case 'LIMIT_EXCEEDED':
-      return 'You reached the per-user limit for this event.'
-    case 'SALE_NOT_STARTED':
-      return 'Sale has not started.'
-    case 'SALE_ENDED':
-      return 'Sale has ended.'
-    default:
-      return error.detail
-  }
 }
 
 function EventDetailPage() {
