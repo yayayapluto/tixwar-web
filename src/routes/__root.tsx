@@ -38,7 +38,7 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 border-b px-4 py-3">
         <Link to="/events" className="flex items-center gap-2 font-semibold">
           <Ticket className="size-5" aria-hidden="true" />
           TixWar
@@ -72,7 +72,7 @@ function Header() {
           )}
         </div>
       </div>
-      <nav aria-label="Primary" className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-2">
+      <nav aria-label="Primary" className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 py-2">
         <NavLink to="/events">Events</NavLink>
         {session && <NavLink to="/orders">Orders</NavLink>}
         {session && <NavLink to="/tickets">Tickets</NavLink>}
