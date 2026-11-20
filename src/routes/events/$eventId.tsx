@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Activity } from 'lucide-react'
-import { useState } from 'react'
+import { Activity, ChevronLeft } from 'lucide-react'
+import { useId, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +26,8 @@ import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
 import { useStockStream } from '@/features/realtime/use-stock-stream'
-import { STATUS_LABEL } from '@/lib/status'
+import { toApiError } from '@/lib/errors'
+import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
@@ -34,34 +35,61 @@ export const Route = createFileRoute('/events/$eventId')({
   component: EventDetailPage,
 })
 
+// Display-only title case for raw API values ("music" -> "Music");
+// the raw value is still what gets sent to the API.
+function titleCase(value: string) {
+  return value
+    .split(' ')
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(' ')
+}
+
+function orderErrorMessage(raw: unknown): string {
+  const error = toApiError(raw)
+  switch (error.code) {
+    case 'SOLD_OUT':
+      return 'This tier just sold out — try another tier.'
+    case 'LIMIT_EXCEEDED':
+      return "You've reached the purchase limit for this tier."
+    case 'RATE_LIMITED':
+      return error.retryAfterSeconds
+        ? `Too many requests — try again in ${error.retryAfterSeconds}s.`
+        : 'Too many requests — wait a moment and try again.'
+    case 'SALE_ENDED':
+      return 'The sale for this tier has ended.'
+    case 'SALE_NOT_STARTED':
+      return "The sale for this tier hasn't started yet."
+    default:
+      return error.detail || error.title || 'Something went wrong — try again.'
+  }
+}
+
 function TierCard({
   tier,
   cheapest,
-  index,
+  showSaleWindow,
   onLoadTest,
 }: {
   tier: TicketTier
   cheapest?: boolean
-  index: number
+  showSaleWindow?: boolean
   onLoadTest?: (tierId: string) => void
 }) {
   const session = useSession()
   const navigate = useNavigate()
   const createOrder = useCreateOrder()
   const [quantity, setQuantity] = useState(1)
-  const saleSecondsLeft = useCountdown(tier.saleEndsAt)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const quantityLabelId = useId()
+  const saleSecondsLeft = useCountdown(showSaleWindow ? tier.saleEndsAt : undefined)
 
   const saleStart = new Date(tier.saleStartsAt).getTime()
   const saleEnd = new Date(tier.saleEndsAt).getTime()
   const now = Date.now()
   const saleOpen = now >= saleStart && now <= saleEnd
-  const lowStock = tier.quota > 0 && tier.quota <= 10
 
   return (
-    <Card
-      className={cn('animate-fade-up', cheapest && 'border-primary')}
-      style={{ animationDelay: `${index * 60}ms` }}
-    >
+    <Card className={cn(cheapest && 'border-primary')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
@@ -72,15 +100,9 @@ function TierCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {lowStock ? (
-          <p className="text-sm font-medium text-destructive">
-            Only {tier.quota} left · max {tier.maxPerUser} per user
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {tier.quota} left · max {tier.maxPerUser} per user
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground">
+          Total quota {tier.quota} · max {tier.maxPerUser} per user
+        </p>
         {session?.user.role === 'admin' && (
           <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
             <span className="text-muted-foreground">Tier ID</span>
@@ -90,15 +112,16 @@ function TierCard({
             </span>
           </div>
         )}
-        {saleOpen && saleSecondsLeft !== null ? (
-          <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
-            Sale ends in {formatCountdown(saleSecondsLeft)}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
-          </p>
-        )}
+        {showSaleWindow &&
+          (saleOpen && saleSecondsLeft !== null ? (
+            <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
+              Sale ends in {formatCountdown(saleSecondsLeft)}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
+            </p>
+          ))}
         {!session ? (
           <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
             Log in to buy
@@ -119,38 +142,58 @@ function TierCard({
             </Button>
           </>
         ) : (
-          <div className="flex gap-2">
-            <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
-              <SelectTrigger aria-label="Quantity" className="w-24">
-                <SelectValue placeholder="Qty" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              className="flex-1"
-              disabled={!saleOpen || createOrder.isPending}
-              onClick={() =>
-                createOrder.mutate(
-                  { tierId: tier.id, quantity },
-                  {
-                    onSuccess: (order) =>
-                      navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
-                  },
-                )
-              }
-            >
-              {createOrder.isPending
-                ? 'Reserving…'
-                : saleOpen
-                  ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
-                  : 'Not on sale'}
-            </Button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <span id={quantityLabelId} className="sr-only">
+                Quantity
+              </span>
+              <Select
+                value={String(quantity)}
+                onValueChange={(v) => {
+                  setQuantity(Number(v))
+                  setOrderError(null)
+                }}
+              >
+                <SelectTrigger aria-labelledby={quantityLabelId} className="w-24">
+                  <SelectValue placeholder="Qty" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map(
+                    (n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+              <Button
+                className="flex-1"
+                disabled={!saleOpen || createOrder.isPending}
+                onClick={() => {
+                  setOrderError(null)
+                  createOrder.mutate(
+                    { tierId: tier.id, quantity },
+                    {
+                      onSuccess: (order) =>
+                        navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
+                      onError: (error) => setOrderError(orderErrorMessage(error)),
+                    },
+                  )
+                }}
+              >
+                {createOrder.isPending
+                  ? 'Reserving…'
+                  : saleOpen
+                    ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
+                    : 'Not on sale'}
+              </Button>
+            </div>
+            {orderError && (
+              <p role="alert" className="text-sm text-destructive">
+                {orderError}
+              </p>
+            )}
           </div>
         )}
       </CardContent>
@@ -169,17 +212,42 @@ function EventDetailPage() {
   })
   const isAdmin = session?.user.role === 'admin'
 
-  if (event.isPending) return <ListSkeleton rows={2} />
+  // Hooks must run before the early returns below, so the sale window is
+  // derived from the (possibly still empty) query data here.
+  // Cheapest first: the focal point is the cheapest tier.
+  const sortedTiers = [...(event.data?.data.tiers ?? [])].sort((a, b) => a.price - b.price)
+  const cheapestTierId = sortedTiers[0]?.id
+  // One sale window shared by every tier -> one page-level countdown.
+  // Per-tier countdowns render only when tiers have different windows.
+  const sharedSaleWindow =
+    sortedTiers.length > 0 &&
+    sortedTiers.every(
+      (tier) =>
+        tier.saleStartsAt === sortedTiers[0].saleStartsAt &&
+        tier.saleEndsAt === sortedTiers[0].saleEndsAt,
+    )
+  const saleWindow = sharedSaleWindow ? sortedTiers[0] : undefined
+  const saleSecondsLeft = useCountdown(saleWindow?.saleEndsAt)
+
+  if (event.isPending) return <ListSkeleton rows={3} />
   if (event.isError) return <ErrorState error={event.error} onRetry={() => event.refetch()} />
 
   const detail = event.data.data
-  const cheapestTierId =
-    detail.tiers && detail.tiers.length > 0
-      ? detail.tiers.reduce((a, b) => (a.price <= b.price ? a : b)).id
-      : undefined
+  const saleStart = saleWindow ? new Date(saleWindow.saleStartsAt).getTime() : 0
+  const saleEnd = saleWindow ? new Date(saleWindow.saleEndsAt).getTime() : 0
+  const now = Date.now()
+  const saleOpen = Boolean(saleWindow) && now >= saleStart && now <= saleEnd
 
   return (
     <div className="space-y-4">
+      <Link
+        to="/events"
+        search={{ q: '', status: '', category: '', page: 1, sort: 'ending' }}
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        Back to events
+      </Link>
       <div className="space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h1 className="text-2xl font-semibold">{detail.name}</h1>
@@ -190,14 +258,26 @@ function EventDetailPage() {
                 Load test
               </Button>
             )}
-            <Badge>{STATUS_LABEL[detail.status] ?? detail.status}</Badge>
+            <Badge variant={EVENT_STATUS_VARIANT[detail.status] ?? 'secondary'}>
+              {STATUS_LABEL[detail.status] ?? detail.status}
+            </Badge>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          {detail.category} · {detail.city} · {detail.venue}
+          {titleCase(detail.category)} · {titleCase(detail.city)} · {detail.venue}
         </p>
         <p className="text-sm text-muted-foreground">{formatDate(detail.startsAt)}</p>
         {detail.description && <p className="text-sm">{detail.description}</p>}
+        {saleWindow &&
+          (saleOpen && saleSecondsLeft !== null ? (
+            <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
+              Sale ends in {formatCountdown(saleSecondsLeft)}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sale: {formatDate(saleWindow.saleStartsAt)} – {formatDate(saleWindow.saleEndsAt)}
+            </p>
+          ))}
         {session?.user.role === 'admin' && (
           <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
             <span className="text-muted-foreground">Event ID</span>
@@ -209,21 +289,27 @@ function EventDetailPage() {
         )}
       </div>
 
-      {stats.data && (
+      {isAdmin && stats.data && (
         <p className="text-sm text-muted-foreground">
           {stats.data.data.sold} sold · {formatCurrency(stats.data.data.revenue)} revenue
         </p>
       )}
 
       <h2 className="text-lg font-semibold">Tickets</h2>
-      {detail.tiers && detail.tiers.length > 0 ? (
+      {!isAdmin && (
+        <p className="text-sm text-muted-foreground">
+          After you buy, you&apos;ll go to your order to complete payment before its countdown runs
+          out. Once paid, your tickets are on the Tickets page.
+        </p>
+      )}
+      {sortedTiers.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {detail.tiers.map((tier, i) => (
+          {sortedTiers.map((tier) => (
             <TierCard
               key={tier.id}
               tier={tier}
               cheapest={tier.id === cheapestTierId}
-              index={i}
+              showSaleWindow={!sharedSaleWindow}
               onLoadTest={(tierId) => setLoadDrawer({ open: true, tierId })}
             />
           ))}
