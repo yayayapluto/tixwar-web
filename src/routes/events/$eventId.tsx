@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Zap } from 'lucide-react'
 import { useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
@@ -12,7 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { useSession } from '@/features/auth/use-auth'
+import { LoadGeneratorForm } from '@/features/debug/load-generator-form'
 import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
@@ -23,7 +32,13 @@ export const Route = createFileRoute('/events/$eventId')({
   component: EventDetailPage,
 })
 
-function TierCard({ tier }: { tier: TicketTier }) {
+function TierCard({
+  tier,
+  onLoadTest,
+}: {
+  tier: TicketTier
+  onLoadTest?: (tierId: string) => void
+}) {
   const session = useSession()
   const navigate = useNavigate()
   const createOrder = useCreateOrder()
@@ -63,35 +78,50 @@ function TierCard({ tier }: { tier: TicketTier }) {
             Log in to buy
           </Link>
         ) : (
-          <div className="flex gap-2">
-            <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
-              <SelectTrigger aria-label="Quantity" className="w-24">
-                <SelectValue placeholder="Qty" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              className="flex-1"
-              disabled={!saleOpen || createOrder.isPending}
-              onClick={() =>
-                createOrder.mutate(
-                  { tierId: tier.id, quantity },
-                  {
-                    onSuccess: (order) =>
-                      navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
-                  },
-                )
-              }
-            >
-              {createOrder.isPending ? 'Reserving…' : saleOpen ? 'Buy' : 'Not on sale'}
-            </Button>
-          </div>
+          <>
+            <div className="flex gap-2">
+              <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
+                <SelectTrigger aria-label="Quantity" className="w-24">
+                  <SelectValue placeholder="Qty" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map(
+                    (n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+              <Button
+                className="flex-1"
+                disabled={!saleOpen || createOrder.isPending}
+                onClick={() =>
+                  createOrder.mutate(
+                    { tierId: tier.id, quantity },
+                    {
+                      onSuccess: (order) =>
+                        navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
+                    },
+                  )
+                }
+              >
+                {createOrder.isPending ? 'Reserving…' : saleOpen ? 'Buy' : 'Not on sale'}
+              </Button>
+            </div>
+            {session?.user.role === 'admin' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onLoadTest?.(tier.id)}
+              >
+                <Zap className="size-4" aria-hidden="true" />
+                Load test this tier
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
@@ -104,6 +134,10 @@ function EventDetailPage() {
   const event = useEvent(eventId)
   const stats = useEventStats(eventId)
   useStockStream(eventId, true)
+  const [loadDrawer, setLoadDrawer] = useState<{ open: boolean; tierId?: string }>({
+    open: false,
+  })
+  const isAdmin = session?.user.role === 'admin'
 
   if (event.isPending) return <ListSkeleton rows={2} />
   if (event.isError) return <ErrorState error={event.error} onRetry={() => event.refetch()} />
@@ -115,7 +149,15 @@ function EventDetailPage() {
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-2xl font-semibold">{detail.name}</h1>
-          <Badge>{detail.status}</Badge>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setLoadDrawer({ open: true })}>
+                <Zap className="size-4" aria-hidden="true" />
+                Load test
+              </Button>
+            )}
+            <Badge>{detail.status}</Badge>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           {detail.category} · {detail.city} · {detail.venue}
@@ -143,11 +185,36 @@ function EventDetailPage() {
       {detail.tiers && detail.tiers.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {detail.tiers.map((tier) => (
-            <TierCard key={tier.id} tier={tier} />
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              onLoadTest={(tierId) => setLoadDrawer({ open: true, tierId })}
+            />
           ))}
         </div>
       ) : (
         <EmptyState title="No ticket tiers yet" />
+      )}
+
+      {isAdmin && (
+        <Sheet
+          open={loadDrawer.open}
+          onOpenChange={(open) => setLoadDrawer((d) => ({ ...d, open }))}
+        >
+          <SheetContent side="right">
+            <SheetHeader>
+              <SheetTitle>Load generator</SheetTitle>
+              <SheetDescription>Run a load test against {detail.name}.</SheetDescription>
+            </SheetHeader>
+            <div className="overflow-y-auto px-4 pb-4">
+              <LoadGeneratorForm
+                key={loadDrawer.tierId ?? 'all'}
+                initialEventId={detail.id}
+                initialTierId={loadDrawer.tierId}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   )

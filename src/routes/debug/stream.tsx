@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity, Zap } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,13 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { requireAdmin } from '@/features/auth/route-guard'
-import {
-  type DebugChaosRequest,
-  type DebugLoadRequest,
-  useDebugChaos,
-  useDebugLoad,
-  useDebugStream,
-} from '@/features/debug/queries'
+import { LoadGeneratorForm } from '@/features/debug/load-generator-form'
+import { type DebugChaosRequest, useDebugChaos, useDebugStream } from '@/features/debug/queries'
 
 export const Route = createFileRoute('/debug/stream')({
   beforeLoad: () => {
@@ -32,16 +27,10 @@ export const Route = createFileRoute('/debug/stream')({
 const MAX_TRACES = 50
 
 function DebugPage() {
-  const load = useDebugLoad()
   const chaos = useDebugChaos()
   const [traces, setTraces] = useState<Array<{ id: number; ts: string; raw: string }>>([])
   const idRef = useRef(0)
   const [streaming, setStreaming] = useState(true)
-  const [loadForm, setLoadForm] = useState<DebugLoadRequest>({
-    scenario: 'single',
-    concurrency: 20,
-    requests: 100,
-  })
   const [chaosForm, setChaosForm] = useState<DebugChaosRequest>({
     target: 'gateway',
     action: 'latency',
@@ -78,87 +67,8 @@ function DebugPage() {
           <CardHeader>
             <CardTitle className="text-base">Load generator</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="scenario">Scenario</Label>
-              <Select
-                value={loadForm.scenario}
-                onValueChange={(v) =>
-                  setLoadForm((f) => ({
-                    ...f,
-                    scenario: v as DebugLoadRequest['scenario'],
-                  }))
-                }
-              >
-                <SelectTrigger id="scenario">
-                  <SelectValue placeholder="Select scenario" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">Single</SelectItem>
-                  <SelectItem value="crowd">Crowd</SelectItem>
-                  <SelectItem value="abuse">Abuse</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="eventId">Event ID</Label>
-                <Input
-                  id="eventId"
-                  value={loadForm.eventId ?? ''}
-                  onChange={(e) => setLoadForm((f) => ({ ...f, eventId: e.target.value }))}
-                  placeholder="evt_…"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tierId">Tier ID</Label>
-                <Input
-                  id="tierId"
-                  value={loadForm.tierId ?? ''}
-                  onChange={(e) => setLoadForm((f) => ({ ...f, tierId: e.target.value }))}
-                  placeholder="tier_…"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="concurrency">Concurrency</Label>
-                <Input
-                  id="concurrency"
-                  type="number"
-                  value={loadForm.concurrency}
-                  onChange={(e) =>
-                    setLoadForm((f) => ({ ...f, concurrency: Number(e.target.value) }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="requests">Requests</Label>
-                <Input
-                  id="requests"
-                  type="number"
-                  value={loadForm.requests}
-                  onChange={(e) => setLoadForm((f) => ({ ...f, requests: Number(e.target.value) }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={loadForm.quantity ?? 1}
-                  onChange={(e) => setLoadForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
-                />
-              </div>
-            </div>
-            <Button
-              onClick={() => load.mutate(loadForm)}
-              disabled={load.isPending}
-              className="w-full"
-            >
-              <Zap className="size-4" aria-hidden="true" />
-              {load.isPending ? 'Running…' : 'Run load'}
-            </Button>
+          <CardContent>
+            <LoadGeneratorForm />
           </CardContent>
         </Card>
 
