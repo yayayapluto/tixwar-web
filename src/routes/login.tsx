@@ -21,9 +21,8 @@ function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch()
 
   return (
-    <div className="animate-fade-up mx-auto max-w-sm pt-8">
-      <Card className="overflow-hidden">
-        <div aria-hidden="true" className="h-1.5 bg-brand-gradient" />
+    <div className="mx-auto max-w-sm pt-8">
+      <Card>
         <CardHeader>
           <CardTitle>Log in</CardTitle>
           <CardDescription>

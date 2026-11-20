@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Flame, Search, Ticket } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { type Event, type EventStatus, useEvents } from '@/features/events/queries'
-import { categoryGradient } from '@/lib/event-art'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { cn, formatDate } from '@/lib/utils'
 
@@ -23,52 +22,27 @@ export const Route = createFileRoute('/events/')({
 })
 
 function EventCard({ event, index }: { event: Event; index: number }) {
-  const start = new Date(event.startsAt)
-  const day = start.getDate()
-  const month = start.toLocaleString('en-US', { month: 'short' }).toUpperCase()
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
-      className="animate-fade-up group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
       <Card
         className={cn(
-          'overflow-hidden transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:border-ring hover:shadow-xl hover:shadow-orange-500/10 active:scale-[0.98]',
+          'transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]',
           event.status === 'ON_SALE' && 'border-primary/50',
           event.status === 'SOLD_OUT' && 'opacity-60',
         )}
       >
-        <div
-          className={cn(
-            'relative h-28 overflow-hidden bg-gradient-to-br',
-            categoryGradient(event.category),
-          )}
-        >
-          <Ticket
-            className="absolute -right-3 -bottom-4 size-24 rotate-12 text-white/20 transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-6"
-            aria-hidden="true"
-          />
-          <div className="absolute bottom-3 left-4 text-white">
-            <p className="text-3xl leading-none font-extrabold tabular-nums">{day}</p>
-            <p className="mt-1 text-xs font-extrabold tracking-widest uppercase">{month}</p>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="min-w-0 flex-1 truncate">{event.name}</CardTitle>
+            <Badge variant={EVENT_STATUS_VARIANT[event.status] ?? 'secondary'} className="shrink-0">
+              {STATUS_LABEL[event.status] ?? event.status}
+            </Badge>
           </div>
-          <Badge
-            variant={EVENT_STATUS_VARIANT[event.status] ?? 'secondary'}
-            className="absolute top-3 right-3 gap-1.5 bg-white/95 text-zinc-900 shadow-sm"
-          >
-            {event.status === 'ON_SALE' && (
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-              </span>
-            )}
-            {STATUS_LABEL[event.status] ?? event.status}
-          </Badge>
-        </div>
-        <CardHeader className="pb-2">
-          <CardTitle className="min-w-0 flex-1 truncate text-lg font-bold">{event.name}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
           <p>
@@ -135,73 +109,58 @@ function EventsPage() {
 
   return (
     <div className="space-y-4">
-      <section className="animate-fade-up relative overflow-hidden rounded-3xl bg-brand-gradient px-5 py-7 sm:px-8 sm:py-9">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <span className="animate-float absolute -top-8 -right-8 size-36 rounded-full bg-white/15 blur-xl" />
-          <span className="animate-float-slow absolute bottom-4 left-1/3 size-20 rounded-full bg-white/10 blur-lg" />
-          <Ticket className="animate-float absolute top-6 right-10 size-10 rotate-12 text-white/25" />
-        </div>
-        <div className="relative">
-          <p className="flex items-center gap-1.5 text-xs font-extrabold tracking-widest text-white/85 uppercase">
-            <Flame className="size-4" aria-hidden="true" />
-            Flash sale tickets
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold">Events</h1>
+        {query.data?.meta.total !== undefined && (
+          <p className="text-sm text-muted-foreground">
+            {query.data.meta.total} events
+            {filtered ? ' matching your search' : ''}
           </p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            Tickets sell out fast.
-          </h1>
-          <p className="mt-1 text-sm font-medium text-white/85">
-            {query.data?.meta.total !== undefined
-              ? `${query.data.meta.total} events live right now — grab yours before the countdown ends.`
-              : 'Grab yours before the countdown ends.'}
-          </p>
-          <form
-            className="mt-5 flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-lg sm:flex-row sm:items-center"
-            onSubmit={(e) => {
-              e.preventDefault()
-              setAppliedQ(q)
-              setItems([])
-              setPage(1)
-            }}
-          >
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-2.5 top-2.5 size-4 text-zinc-400"
-                aria-hidden="true"
-              />
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search events"
-                aria-label="Search events"
-                className="border-zinc-200 bg-white pl-8 text-zinc-900 placeholder:text-zinc-400"
-              />
-            </div>
-            <Select
-              value={status === '' ? 'all' : status}
-              onValueChange={(v) => {
-                setStatus(v === 'all' ? '' : v)
-                setItems([])
-                setPage(1)
-              }}
-            >
-              <SelectTrigger
-                aria-label="Filter by status"
-                className="border-zinc-200 bg-white text-zinc-900 sm:w-44"
-              >
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="ON_SALE">On sale</SelectItem>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                <SelectItem value="SOLD_OUT">Sold out</SelectItem>
-                <SelectItem value="ENDED">Ended</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit">Search</Button>
-          </form>
+        )}
+      </div>
+      <form
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setAppliedQ(q)
+          setItems([])
+          setPage(1)
+        }}
+      >
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-2.5 top-2.5 size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search events"
+            aria-label="Search events"
+            className="pl-8"
+          />
         </div>
-      </section>
+        <Select
+          value={status === '' ? 'all' : status}
+          onValueChange={(v) => {
+            setStatus(v === 'all' ? '' : v)
+            setItems([])
+            setPage(1)
+          }}
+        >
+          <SelectTrigger aria-label="Filter by status" className="sm:w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="ON_SALE">On sale</SelectItem>
+            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+            <SelectItem value="SOLD_OUT">Sold out</SelectItem>
+            <SelectItem value="ENDED">Ended</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button type="submit">Search</Button>
+      </form>
 
       {query.isPending ? (
         <ListSkeleton rows={4} />

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Activity, Ticket } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
@@ -26,7 +26,6 @@ import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
 import { useStockStream } from '@/features/realtime/use-stock-stream'
-import { categoryGradient } from '@/lib/event-art'
 import { STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
@@ -60,27 +59,21 @@ function TierCard({
 
   return (
     <Card
-      className={cn('animate-fade-up', cheapest && 'border-primary shadow-lg shadow-orange-500/15')}
+      className={cn('animate-fade-up', cheapest && 'border-primary')}
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
           <span className="flex shrink-0 items-center gap-2">
-            {cheapest && (
-              <Badge className="border-transparent bg-brand-gradient text-white">Cheapest</Badge>
-            )}
+            {cheapest && <Badge>Cheapest</Badge>}
             <span className="text-2xl font-bold tabular-nums">{formatCurrency(tier.price)}</span>
           </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {lowStock ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-destructive">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-destructive" />
-            </span>
+          <p className="text-sm font-medium text-destructive">
             Only {tier.quota} left · max {tier.maxPerUser} per user
           </p>
         ) : (
@@ -187,50 +180,34 @@ function EventDetailPage() {
 
   return (
     <div className="space-y-4">
-      <section
-        className={cn(
-          'animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br px-5 py-7 text-white sm:px-8',
-          categoryGradient(detail.category),
-        )}
-      >
-        <Ticket
-          className="animate-float pointer-events-none absolute -right-4 -bottom-6 size-36 rotate-12 text-white/20"
-          aria-hidden="true"
-        />
-        <div className="relative">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <Badge className="bg-white/95 text-zinc-900 shadow-sm">
-              {STATUS_LABEL[detail.status] ?? detail.status}
-            </Badge>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h1 className="text-2xl font-semibold">{detail.name}</h1>
+          <div className="flex items-center gap-2">
             {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLoadDrawer({ open: true })}
-                className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-              >
+              <Button variant="outline" size="sm" onClick={() => setLoadDrawer({ open: true })}>
                 <Activity className="size-4" aria-hidden="true" />
                 Load test
               </Button>
             )}
+            <Badge>{STATUS_LABEL[detail.status] ?? detail.status}</Badge>
           </div>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">{detail.name}</h1>
-          <p className="mt-2 text-sm font-medium text-white/85">
-            {detail.category} · {detail.city} · {detail.venue}
-          </p>
-          <p className="text-sm font-medium text-white/85">{formatDate(detail.startsAt)}</p>
-          {detail.description && <p className="mt-2 text-sm text-white/90">{detail.description}</p>}
-          {session?.user.role === 'admin' && (
-            <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-black/20 p-2 text-xs backdrop-blur">
-              <span className="text-white/80">Event ID</span>
-              <span className="flex shrink-0 items-center gap-1">
-                <code className="font-mono">{detail.id}</code>
-                <CopyButton value={detail.id} label="Event ID" />
-              </span>
-            </div>
-          )}
         </div>
-      </section>
+        <p className="text-sm text-muted-foreground">
+          {detail.category} · {detail.city} · {detail.venue}
+        </p>
+        <p className="text-sm text-muted-foreground">{formatDate(detail.startsAt)}</p>
+        {detail.description && <p className="text-sm">{detail.description}</p>}
+        {session?.user.role === 'admin' && (
+          <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
+            <span className="text-muted-foreground">Event ID</span>
+            <span className="flex shrink-0 items-center gap-1">
+              <code className="font-mono">{detail.id}</code>
+              <CopyButton value={detail.id} label="Event ID" />
+            </span>
+          </div>
+        )}
+      </div>
 
       {stats.data && (
         <p className="text-sm text-muted-foreground">
@@ -238,7 +215,7 @@ function EventDetailPage() {
         </p>
       )}
 
-      <h2 className="text-xl font-extrabold tracking-tight">Tickets</h2>
+      <h2 className="text-lg font-semibold">Tickets</h2>
       {detail.tiers && detail.tiers.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {detail.tiers.map((tier, i) => (

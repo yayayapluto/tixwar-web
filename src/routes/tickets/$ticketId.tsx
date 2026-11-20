@@ -55,7 +55,7 @@ function TicketDetailPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-2">
-        <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold tracking-tight">
+        <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold">
           {eventQuery.data?.data.name ?? 'Ticket'}
         </h1>
         <QrCode className="size-6 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -82,16 +82,14 @@ function TicketDetailPage() {
             · Issued {formatDate(ticket.issuedAt)}
           </p>
           {/* White background is required for QR scannability */}
-          <div className="rounded-2xl bg-brand-gradient p-1.5 shadow-lg shadow-orange-500/20">
-            <div className="flex justify-center rounded-xl border bg-white p-4">
-              <img
-                src={detail.qrUrl}
-                alt={`QR code for ticket ${ticket.code}`}
-                width={224}
-                height={224}
-                className="size-56 object-contain"
-              />
-            </div>
+          <div className="flex justify-center rounded-lg border bg-white p-4">
+            <img
+              src={detail.qrUrl}
+              alt={`QR code for ticket ${ticket.code}`}
+              width={224}
+              height={224}
+              className="size-56 object-contain"
+            />
           </div>
           <Button
             className="w-full"
@@ -113,30 +111,10 @@ function TicketDetailPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-brand-gradient transition-[width] duration-1000 ease-linear"
-                  style={{
-                    width: `${
-                      detail.qrExpiresIn > 0
-                        ? Math.max(
-                            0,
-                            Math.min(
-                              100,
-                              ((qrSecondsLeft ?? detail.qrExpiresIn) / detail.qrExpiresIn) * 100,
-                            ),
-                          )
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-              <p className="text-center text-xs text-muted-foreground">
-                QR link expires in{' '}
-                {qrSecondsLeft === null ? `${detail.qrExpiresIn}s` : formatCountdown(qrSecondsLeft)}
-              </p>
-            </div>
+            <p className="text-center text-xs text-muted-foreground">
+              QR link expires in{' '}
+              {qrSecondsLeft === null ? `${detail.qrExpiresIn}s` : formatCountdown(qrSecondsLeft)}
+            </p>
           )}
         </CardContent>
       </Card>

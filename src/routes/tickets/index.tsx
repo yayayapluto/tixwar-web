@@ -17,14 +17,13 @@ export const Route = createFileRoute('/tickets/')({
 function TicketCard({ ticket, index }: { ticket: Ticket; index: number }) {
   return (
     <Card
-      className="animate-fade-up relative overflow-hidden"
+      className="animate-fade-up"
       style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-brand-gradient" />
-      <CardHeader className="pl-7">
+      <CardHeader>
         <CardTitle className="min-w-0 truncate font-mono text-sm">{ticket.code}</CardTitle>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2 border-t border-dashed pt-4 pl-7">
+      <CardContent className="flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-sm text-muted-foreground">
           Issued {formatDate(ticket.issuedAt)}
         </span>
@@ -46,7 +45,7 @@ function TicketsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold tracking-tight">My tickets</h1>
+      <h1 className="text-2xl font-semibold">My tickets</h1>
       {query.isPending ? (
         <ListSkeleton rows={3} />
       ) : query.isError ? (
