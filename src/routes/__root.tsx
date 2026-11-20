@@ -1,19 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
-import {
-  Bug,
-  CalendarDays,
-  KeyRound,
-  LogOut,
-  Menu,
-  Moon,
-  Receipt,
-  Sun,
-  Ticket,
-  X,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Bug, CalendarDays, KeyRound, LogOut, Moon, Receipt, Sun, Ticket } from 'lucide-react'
 import { Toaster } from '@/components/toaster'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useLogout, useSession } from '@/features/auth/use-auth'
@@ -32,7 +20,7 @@ type NavItem = {
   show: boolean
 }
 
-function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
+function BottomBar() {
   const session = useSession()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const items: Array<NavItem> = [
@@ -44,7 +32,10 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
   ]
 
   return (
-    <nav aria-label="Primary" className="space-y-1 px-3">
+    <nav
+      aria-label="Primary"
+      className="fixed bottom-4 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
+    >
       {items
         .filter((item) => item.show)
         .map((item) => {
@@ -54,9 +45,8 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
             <Link
               key={item.to}
               to={item.to}
-              onClick={onNavigate}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
                 active
                   ? 'bg-secondary text-secondary-foreground'
                   : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
@@ -71,113 +61,64 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
   )
 }
 
-function SidebarFooter() {
+function Header() {
   const { theme, toggle } = useTheme()
   const session = useSession()
   const logout = useLogout()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
-    <div className="space-y-1 border-t p-3">
-      <Button variant="ghost" className="w-full justify-start" onClick={toggle}>
-        {theme === 'dark' ? (
-          <Sun className="size-4" aria-hidden="true" />
-        ) : (
-          <Moon className="size-4" aria-hidden="true" />
-        )}
-        {theme === 'dark' ? 'Light theme' : 'Dark theme'}
-      </Button>
-      {session ? (
-        <Button variant="ghost" className="w-full justify-start" onClick={() => logout.mutate()}>
-          <LogOut className="size-4" aria-hidden="true" />
-          Log out
-        </Button>
-      ) : (
-        <Link
-          to="/login"
-          search={pathname !== '/login' ? { redirect: pathname } : undefined}
-          className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}
-        >
-          Log in
+    <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
+        <Link to="/events" className="flex items-center gap-2 font-semibold">
+          <Ticket className="size-5" aria-hidden="true" />
+          TixWar
         </Link>
-      )}
-    </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
+            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
+          {session ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => logout.mutate()}
+              aria-label="Log out"
+            >
+              <LogOut className="size-4" aria-hidden="true" />
+            </Button>
+          ) : (
+            <Link
+              to="/login"
+              search={pathname !== '/login' ? { redirect: pathname } : undefined}
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            >
+              Log in
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
   )
 }
 
 function RootComponent() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const closeSidebar = () => setSidebarOpen(false)
-
-  useEffect(() => {
-    if (!sidebarOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [sidebarOpen])
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <div className="flex min-h-dvh flex-col lg:pl-64">
-          <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/80 px-4 py-3 backdrop-blur lg:hidden">
-            <Link to="/events" className="flex items-center gap-2 font-semibold">
-              <Ticket className="size-5" aria-hidden="true" />
-              TixWar
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open menu"
-              aria-expanded={sidebarOpen}
-            >
-              <Menu className="size-5" aria-hidden="true" />
-            </Button>
-          </header>
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+        <div className="flex min-h-dvh flex-col">
+          <Header />
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-24">
             <Outlet />
           </main>
+          <BottomBar />
           <Toaster />
         </div>
-        {sidebarOpen && (
-          <div
-            aria-hidden="true"
-            onClick={closeSidebar}
-            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          />
-        )}
-        <aside
-          className={cn(
-            'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-background transition-transform duration-200 lg:translate-x-0',
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-          )}
-        >
-          <div className="flex items-center justify-between px-4 py-3">
-            <Link
-              to="/events"
-              onClick={closeSidebar}
-              className="flex items-center gap-2 font-semibold"
-            >
-              <Ticket className="size-5" aria-hidden="true" />
-              TixWar
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={closeSidebar}
-              aria-label="Close menu"
-              className="lg:hidden"
-            >
-              <X className="size-5" aria-hidden="true" />
-            </Button>
-          </div>
-          <SidebarNav onNavigate={closeSidebar} />
-          <div className="flex-1" />
-          <SidebarFooter />
-        </aside>
       </ThemeProvider>
     </QueryClientProvider>
   )
