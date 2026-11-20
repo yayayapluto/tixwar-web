@@ -26,6 +26,7 @@ import {
   useRevokeApiKey,
 } from '@/features/api-keys/queries'
 import { requireAdmin } from '@/features/auth/route-guard'
+import { API_BASE_URL } from '@/lib/api'
 import { toast } from '@/lib/toast'
 import { formatDate } from '@/lib/utils'
 
@@ -95,6 +96,50 @@ function ApiKeysPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">API keys</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>What are API keys for?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            API keys let external apps, services, or scripts call the TixWar API without a user
+            login. Send the key as the{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">X-API-Key</code> header
+            on every request.
+          </p>
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Base URL</p>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                {API_BASE_URL}
+              </code>
+              <CopyButton
+                value={API_BASE_URL}
+                label="Base URL"
+                onCopied={() => toast('Base URL copied', { variant: 'success' })}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">Example</p>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                {`curl -H "X-API-Key: <your-key>" ${API_BASE_URL}/v1/events`}
+              </code>
+              <CopyButton
+                value={`curl -H "X-API-Key: <your-key>" ${API_BASE_URL}/v1/events`}
+                label="Example request"
+                onCopied={() => toast('Example copied', { variant: 'success' })}
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            A key is shown only once when created, so store it safely. Revoking a key stops every
+            integration using it, and can&apos;t be undone.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
