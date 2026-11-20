@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AuthForm } from '@/features/auth/auth-form'
 import { useRegister } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
@@ -15,24 +16,28 @@ function RegisterPage() {
   const register = useRegister()
 
   return (
-    <div className="mx-auto max-w-sm space-y-6 pt-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Create account</h1>
-        <p className="text-sm text-muted-foreground">
-          Already registered?{' '}
-          <Link to="/login" className="underline underline-offset-4">
-            Log in
-          </Link>
-        </p>
-      </div>
-      <AuthForm
-        mode="register"
-        submitLabel="Create account"
-        isPending={register.isPending}
-        onSubmit={(email, password) =>
-          register.mutate({ email, password }, { onSuccess: () => navigate({ to: '/events' }) })
-        }
-      />
+    <div className="mx-auto max-w-sm pt-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create account</CardTitle>
+          <CardDescription>
+            Already registered?{' '}
+            <Link to="/login" className="underline underline-offset-4">
+              Log in
+            </Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AuthForm
+            mode="register"
+            submitLabel="Create account"
+            isPending={register.isPending}
+            onSubmit={(email, password) =>
+              register.mutate({ email, password }, { onSuccess: () => navigate({ to: '/events' }) })
+            }
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }

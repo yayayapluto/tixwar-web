@@ -1,4 +1,4 @@
-import { Zap } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,7 +42,7 @@ export function LoadGeneratorForm({
             }))
           }
         >
-          <SelectTrigger id="scenario">
+          <SelectTrigger id="scenario" aria-label="Scenario">
             <SelectValue placeholder="Select scenario" />
           </SelectTrigger>
           <SelectContent>
@@ -52,7 +52,7 @@ export function LoadGeneratorForm({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="eventId">Event ID</Label>
           <Input
@@ -72,12 +72,13 @@ export function LoadGeneratorForm({
           />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="concurrency">Concurrency</Label>
           <Input
             id="concurrency"
             type="number"
+            inputMode="numeric"
             value={form.concurrency}
             onChange={(e) => setForm((f) => ({ ...f, concurrency: Number(e.target.value) }))}
           />
@@ -87,6 +88,7 @@ export function LoadGeneratorForm({
           <Input
             id="requests"
             type="number"
+            inputMode="numeric"
             value={form.requests}
             onChange={(e) => setForm((f) => ({ ...f, requests: Number(e.target.value) }))}
           />
@@ -96,13 +98,14 @@ export function LoadGeneratorForm({
           <Input
             id="quantity"
             type="number"
+            inputMode="numeric"
             value={form.quantity ?? 1}
             onChange={(e) => setForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
           />
         </div>
       </div>
       <Button onClick={() => load.mutate(form)} disabled={load.isPending} className="w-full">
-        <Zap className="size-4" aria-hidden="true" />
+        <Activity className="size-4" aria-hidden="true" />
         {load.isPending ? 'Running…' : 'Run load'}
       </Button>
     </div>

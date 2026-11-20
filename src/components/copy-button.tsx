@@ -6,10 +6,12 @@ export function CopyButton({
   value,
   label,
   className,
+  onCopied,
 }: {
   value: string
   label: string
   className?: string
+  onCopied?: () => void
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -22,6 +24,7 @@ export function CopyButton({
   async function handleCopy() {
     await navigator.clipboard.writeText(value)
     setCopied(true)
+    onCopied?.()
   }
 
   return (
@@ -33,9 +36,17 @@ export function CopyButton({
       className={className}
     >
       {copied ? (
-        <Check className="size-4 text-primary" aria-hidden="true" />
+        <Check
+          key="check"
+          className="size-4 animate-in text-primary duration-150 ease-out fade-in zoom-in-95"
+          aria-hidden="true"
+        />
       ) : (
-        <Copy className="size-4" aria-hidden="true" />
+        <Copy
+          key="copy"
+          className="size-4 animate-in duration-150 ease-out fade-in zoom-in-95"
+          aria-hidden="true"
+        />
       )}
     </Button>
   )

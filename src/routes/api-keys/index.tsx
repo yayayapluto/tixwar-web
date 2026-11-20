@@ -1,9 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Copy, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +26,7 @@ import {
   useRevokeApiKey,
 } from '@/features/api-keys/queries'
 import { requireAdmin } from '@/features/auth/route-guard'
+import { toast } from '@/lib/toast'
 import { formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/api-keys/')({
@@ -27,26 +40,46 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
   const revoke = useRevokeApiKey()
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium">{apiKey.name}</p>
+      <div className="min-w-0 space-y-0.5">
+        <p className="truncate text-sm font-medium">{apiKey.name}</p>
         <p className="font-mono text-xs text-muted-foreground">{apiKey.prefix}…</p>
         <p className="text-xs text-muted-foreground">Created {formatDate(apiKey.createdAt)}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Badge variant={apiKey.active ? 'success' : 'secondary'}>
           {apiKey.active ? 'Active' : 'Revoked'}
         </Badge>
         {apiKey.active && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => revoke.mutate(apiKey.id)}
-            disabled={revoke.isPending}
-            aria-label={`Revoke ${apiKey.name}`}
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-            Revoke
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={revoke.isPending}
+                aria-label={`Revoke ${apiKey.name}`}
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+                Revoke
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revoke {apiKey.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Integrations using this key will stop working. This can&apos;t be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep key</AlertDialogCancel>
+                <AlertDialogAction
+                  className={buttonVariants({ variant: 'destructive' })}
+                  onClick={() => revoke.mutate(apiKey.id)}
+                >
+                  Revoke key
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     </div>
@@ -58,12 +91,6 @@ function ApiKeysPage() {
   const create = useCreateApiKey()
   const [name, setName] = useState('')
   const [created, setCreated] = useState<{ name: string; apiKey: string } | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  async function copyKey(key: string) {
-    await navigator.clipboard.writeText(key)
-    setCopied(true)
-  }
 
   return (
     <div className="space-y-4">
@@ -71,7 +98,7 @@ function ApiKeysPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Create key</CardTitle>
+          <CardTitle>Create key</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -108,30 +135,22 @@ function ApiKeysPage() {
       {created && (
         <Card className="border-primary">
           <CardHeader>
-            <CardTitle className="text-base">Copy your key now</CardTitle>
+            <CardTitle>Copy your key now</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
               This key is shown only once. Store it safely.
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 overflow-x-auto rounded bg-muted p-2 text-xs">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 text-xs">
                 {created.apiKey}
               </code>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => copyKey(created.apiKey)}
-                aria-label="Copy API key"
-              >
-                {copied ? (
-                  <span aria-hidden="true">✓</span>
-                ) : (
-                  <Copy className="size-4" aria-hidden="true" />
-                )}
-              </Button>
+              <CopyButton
+                value={created.apiKey}
+                label="API key"
+                onCopied={() => toast('API key copied', { variant: 'success' })}
+              />
             </div>
-            {copied && <p className="text-xs text-muted-foreground">Copied.</p>}
             <Button variant="ghost" size="sm" onClick={() => setCreated(null)}>
               Dismiss
             </Button>

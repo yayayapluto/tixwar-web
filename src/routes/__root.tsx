@@ -35,7 +35,7 @@ function BottomBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-4 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
     >
       {items
         .filter((item) => item.show)
@@ -46,15 +46,16 @@ function BottomBar() {
             <Link
               key={item.to}
               to={item.to}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                'flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.98]',
                 active
                   ? 'bg-secondary text-secondary-foreground'
                   : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
               )}
             >
               <Icon className="size-4" aria-hidden="true" />
-              {item.label}
+              <span className="hidden min-[400px]:inline">{item.label}</span>
             </Link>
           )
         })}
@@ -69,7 +70,7 @@ function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
         <Link to="/events" className="flex items-center gap-2 font-semibold">
           <Ticket className="size-5" aria-hidden="true" />
@@ -82,7 +83,19 @@ function Header() {
             onClick={toggle}
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           >
-            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            {theme === 'dark' ? (
+              <Sun
+                key="sun"
+                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                aria-hidden="true"
+              />
+            ) : (
+              <Moon
+                key="moon"
+                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                aria-hidden="true"
+              />
+            )}
           </Button>
           {session ? (
             <Button

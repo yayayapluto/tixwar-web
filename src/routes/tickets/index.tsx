@@ -18,10 +18,12 @@ function TicketCard({ ticket }: { ticket: Ticket }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-mono text-sm">{ticket.code}</CardTitle>
+        <CardTitle className="min-w-0 truncate font-mono text-sm">{ticket.code}</CardTitle>
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-2">
-        <span className="text-sm text-muted-foreground">Issued {formatDate(ticket.issuedAt)}</span>
+        <span className="min-w-0 truncate text-sm text-muted-foreground">
+          Issued {formatDate(ticket.issuedAt)}
+        </span>
         <Link
           to="/tickets/$ticketId"
           params={{ ticketId: ticket.id }}
@@ -46,7 +48,15 @@ function TicketsPage() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data.data.length === 0 ? (
-        <EmptyState title="No tickets yet" description="Confirmed orders appear here." />
+        <EmptyState
+          title="No tickets yet"
+          description="Your tickets will appear here after payment is confirmed."
+          action={
+            <Link to="/events" className="text-sm underline underline-offset-4">
+              Browse events
+            </Link>
+          }
+        />
       ) : (
         <div className="grid gap-3">
           {query.data.data.map((ticket) => (

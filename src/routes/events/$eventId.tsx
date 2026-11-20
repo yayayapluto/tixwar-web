@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Zap } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
@@ -26,6 +26,8 @@ import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
 import { useStockStream } from '@/features/realtime/use-stock-stream'
+import { STATUS_LABEL } from '@/lib/status'
+import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/$eventId')({
@@ -34,45 +36,64 @@ export const Route = createFileRoute('/events/$eventId')({
 
 function TierCard({
   tier,
+  cheapest,
   onLoadTest,
 }: {
   tier: TicketTier
+  cheapest?: boolean
   onLoadTest?: (tierId: string) => void
 }) {
   const session = useSession()
   const navigate = useNavigate()
   const createOrder = useCreateOrder()
   const [quantity, setQuantity] = useState(1)
+  const saleSecondsLeft = useCountdown(tier.saleEndsAt)
 
   const saleStart = new Date(tier.saleStartsAt).getTime()
   const saleEnd = new Date(tier.saleEndsAt).getTime()
   const now = Date.now()
   const saleOpen = now >= saleStart && now <= saleEnd
+  const lowStock = tier.quota > 0 && tier.quota <= 10
 
   return (
-    <Card>
+    <Card className={cn(cheapest && 'border-primary')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{tier.name}</CardTitle>
-          <span className="text-lg font-semibold">{formatCurrency(tier.price)}</span>
+          <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
+          <span className="flex shrink-0 items-center gap-2">
+            {cheapest && <Badge>Cheapest</Badge>}
+            <span className="text-2xl font-bold tabular-nums">{formatCurrency(tier.price)}</span>
+          </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          {tier.quota} available · max {tier.maxPerUser} per user
-        </p>
+        {lowStock ? (
+          <p className="text-sm font-medium text-destructive">
+            Only {tier.quota} left · max {tier.maxPerUser} per user
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {tier.quota} left · max {tier.maxPerUser} per user
+          </p>
+        )}
         {session?.user.role === 'admin' && (
           <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
             <span className="text-muted-foreground">Tier ID</span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1">
               <code className="font-mono">{tier.id}</code>
-              <CopyButton value={tier.id} label="Tier ID" className="size-6" />
+              <CopyButton value={tier.id} label="Tier ID" />
             </span>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
-        </p>
+        {saleOpen && saleSecondsLeft !== null ? (
+          <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
+            Sale ends in {formatCountdown(saleSecondsLeft)}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
+          </p>
+        )}
         {!session ? (
           <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
             Log in to buy
@@ -80,7 +101,7 @@ function TierCard({
         ) : session.user.role === 'admin' ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Admins are view-only — buying is disabled for admin accounts.
+              Admins are view-only. Buying is disabled for admin accounts.
             </p>
             <Button
               variant="outline"
@@ -88,7 +109,7 @@ function TierCard({
               className="w-full"
               onClick={() => onLoadTest?.(tier.id)}
             >
-              <Zap className="size-4" aria-hidden="true" />
+              <Activity className="size-4" aria-hidden="true" />
               Load test this tier
             </Button>
           </>
@@ -119,7 +140,11 @@ function TierCard({
                 )
               }
             >
-              {createOrder.isPending ? 'Reserving…' : saleOpen ? 'Buy' : 'Not on sale'}
+              {createOrder.isPending
+                ? 'Reserving…'
+                : saleOpen
+                  ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
+                  : 'Not on sale'}
             </Button>
           </div>
         )}
@@ -143,20 +168,24 @@ function EventDetailPage() {
   if (event.isError) return <ErrorState error={event.error} onRetry={() => event.refetch()} />
 
   const detail = event.data.data
+  const cheapestTierId =
+    detail.tiers && detail.tiers.length > 0
+      ? detail.tiers.reduce((a, b) => (a.price <= b.price ? a : b)).id
+      : undefined
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <h1 className="text-2xl font-semibold">{detail.name}</h1>
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setLoadDrawer({ open: true })}>
-                <Zap className="size-4" aria-hidden="true" />
+                <Activity className="size-4" aria-hidden="true" />
                 Load test
               </Button>
             )}
-            <Badge>{detail.status}</Badge>
+            <Badge>{STATUS_LABEL[detail.status] ?? detail.status}</Badge>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -167,9 +196,9 @@ function EventDetailPage() {
         {session?.user.role === 'admin' && (
           <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
             <span className="text-muted-foreground">Event ID</span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1">
               <code className="font-mono">{detail.id}</code>
-              <CopyButton value={detail.id} label="Event ID" className="size-6" />
+              <CopyButton value={detail.id} label="Event ID" />
             </span>
           </div>
         )}
@@ -188,6 +217,7 @@ function EventDetailPage() {
             <TierCard
               key={tier.id}
               tier={tier}
+              cheapest={tier.id === cheapestTierId}
               onLoadTest={(tierId) => setLoadDrawer({ open: true, tierId })}
             />
           ))}

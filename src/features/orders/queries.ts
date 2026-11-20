@@ -1,6 +1,7 @@
 import type { components } from '@api-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getV1Orders, getV1OrdersById, postV1Orders, postV1OrdersByIdCancel } from '@/lib/client'
+import { toast } from '@/lib/toast'
 import { newIdempotencyKey } from '@/lib/utils'
 
 export type Order = components['schemas']['Order']
@@ -50,6 +51,7 @@ export function useCancelOrder() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['order', id] })
       queryClient.invalidateQueries({ queryKey: ['orders'] })
+      toast('Order cancelled', { variant: 'success' })
     },
   })
 }

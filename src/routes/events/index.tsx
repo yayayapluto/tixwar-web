@@ -14,28 +14,33 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { type Event, type EventStatus, useEvents } from '@/features/events/queries'
-import { formatDate } from '@/lib/utils'
+import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
+import { cn, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/')({
   component: EventsPage,
 })
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'secondary'> = {
-  ON_SALE: 'success',
-  SCHEDULED: 'secondary',
-  SOLD_OUT: 'warning',
-  ENDED: 'secondary',
-  DRAFT: 'secondary',
-}
-
 function EventCard({ event }: { event: Event }) {
   return (
-    <Link to="/events/$eventId" params={{ eventId: event.id }} className="block">
-      <Card className="transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]">
+    <Link
+      to="/events/$eventId"
+      params={{ eventId: event.id }}
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <Card
+        className={cn(
+          'transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]',
+          event.status === 'ON_SALE' && 'border-primary/50',
+          event.status === 'SOLD_OUT' && 'opacity-60',
+        )}
+      >
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-base">{event.name}</CardTitle>
-            <Badge variant={STATUS_VARIANT[event.status] ?? 'secondary'}>{event.status}</Badge>
+            <CardTitle className="min-w-0 flex-1 truncate">{event.name}</CardTitle>
+            <Badge variant={EVENT_STATUS_VARIANT[event.status] ?? 'secondary'} className="shrink-0">
+              {STATUS_LABEL[event.status] ?? event.status}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
@@ -68,6 +73,8 @@ function EventsPage() {
   useEffect(() => {
     if (!query.data) return
     const pageItems = query.data.data
+    // The list grows without a cap; fine for the current catalog size,
+    // revisit windowing once it passes ~100 items.
     setItems((prev) =>
       page === 1
         ? pageItems
@@ -90,10 +97,28 @@ function EventsPage() {
     return () => observer.disconnect()
   }, [hasMore, query.isFetching])
 
+  const filtered = appliedQ !== '' || status !== ''
+  const clearFilters = () => {
+    setQ('')
+    setAppliedQ('')
+    setStatus('')
+    setItems([])
+    setPage(1)
+  }
+
   return (
     <div className="space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold">Events</h1>
+        {query.data?.meta.total !== undefined && (
+          <p className="text-sm text-muted-foreground">
+            {query.data.meta.total} events
+            {filtered ? ' matching your search' : ''}
+          </p>
+        )}
+      </div>
       <form
-        className="flex flex-col gap-2 sm:flex-row"
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
           e.preventDefault()
           setAppliedQ(q)
@@ -141,7 +166,20 @@ function EventsPage() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState title="No events found" description="Try a different search or filter." />
+        filtered ? (
+          <EmptyState
+            title={`No events match "${appliedQ !== '' ? appliedQ : (STATUS_LABEL[status] ?? status)}".`}
+            description="Try a different search or filter."
+            hideIcon
+            action={
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear search
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState title="No events found" description="Try a different search or filter." />
+        )
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -153,7 +191,7 @@ function EventsPage() {
           {query.isFetching ? (
             <ListSkeleton rows={2} />
           ) : !hasMore ? (
-            <p className="text-center text-sm text-muted-foreground">
+            <p role="status" className="text-center text-sm text-muted-foreground">
               You&apos;ve reached the end.
             </p>
           ) : null}

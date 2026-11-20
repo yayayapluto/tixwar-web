@@ -31,6 +31,8 @@ export function AuthForm({
         <Input
           id="email"
           type="email"
+          inputMode="email"
+          enterKeyHint="next"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -43,6 +45,7 @@ export function AuthForm({
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
+            enterKeyHint="go"
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -55,12 +58,20 @@ export function AuthForm({
             size="icon"
             onClick={() => setShowPassword((s) => !s)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             {showPassword ? (
-              <EyeOff className="size-4" aria-hidden="true" />
+              <EyeOff
+                key="hide"
+                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                aria-hidden="true"
+              />
             ) : (
-              <Eye className="size-4" aria-hidden="true" />
+              <Eye
+                key="show"
+                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                aria-hidden="true"
+              />
             )}
           </Button>
         </div>

@@ -50,7 +50,7 @@ function DebugPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Debug dashboard</h1>
         <Button
           variant={streaming ? 'default' : 'outline'}
@@ -62,10 +62,10 @@ function DebugPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Load generator</CardTitle>
+            <CardTitle>Load generator</CardTitle>
           </CardHeader>
           <CardContent>
             <LoadGeneratorForm />
@@ -74,7 +74,7 @@ function DebugPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Chaos injection</CardTitle>
+            <CardTitle>Chaos injection</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2">
@@ -88,7 +88,7 @@ function DebugPage() {
                   }))
                 }
               >
-                <SelectTrigger id="target">
+                <SelectTrigger id="target" aria-label="Target">
                   <SelectValue placeholder="Select target" />
                 </SelectTrigger>
                 <SelectContent>
@@ -110,7 +110,7 @@ function DebugPage() {
                   }))
                 }
               >
-                <SelectTrigger id="action">
+                <SelectTrigger id="action" aria-label="Action">
                   <SelectValue placeholder="Select action" />
                 </SelectTrigger>
                 <SelectContent>
@@ -127,6 +127,7 @@ function DebugPage() {
               <Input
                 id="value"
                 type="number"
+                inputMode="numeric"
                 value={chaosForm.value ?? 0}
                 onChange={(e) => setChaosForm((f) => ({ ...f, value: Number(e.target.value) }))}
               />
@@ -145,12 +146,17 @@ function DebugPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-base">Trace stream</CardTitle>
+            <CardTitle>Trace stream</CardTitle>
             <Badge variant="secondary">{traces.length}</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <div ref={feedRef} className="max-h-80 space-y-1 overflow-y-auto">
+          <div
+            ref={feedRef}
+            role="log"
+            aria-label="Trace stream"
+            className="max-h-80 space-y-1 overflow-y-auto"
+          >
             {traces.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {streaming ? 'Waiting for traces…' : 'Stream paused.'}

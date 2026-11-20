@@ -29,14 +29,16 @@ export function EmptyState({
   title,
   description,
   action,
+  hideIcon,
 }: {
   title: string
   description?: string
   action?: React.ReactNode
+  hideIcon?: boolean
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-8 text-center">
-      <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />
+      {!hideIcon && <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />}
       <p className="text-sm font-medium">{title}</p>
       {description && <p className="text-sm text-muted-foreground">{description}</p>}
       {action}
@@ -46,7 +48,8 @@ export function EmptyState({
 
 export function ListSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3">
+    <div role="status" aria-busy="true" className="space-y-3">
+      <span className="sr-only">Loading…</span>
       {Array.from({ length: rows }, (_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static rows, never reordered
         <div key={i} className="space-y-2 rounded-xl border p-4">

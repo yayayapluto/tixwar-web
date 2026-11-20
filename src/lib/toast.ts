@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 export type Toast = {
   id: number
   message: string
+  variant: 'error' | 'success'
 }
 
 const listeners = new Set<() => void>()
@@ -25,11 +26,14 @@ export function dismissToast(id: number) {
   emit()
 }
 
-export function toast(message: string, duration = 6000) {
+export function toast(
+  message: string,
+  opts?: { duration?: number; variant?: 'error' | 'success' },
+) {
   const id = nextId++
-  toasts = [...toasts, { id, message }]
+  toasts = [...toasts, { id, message, variant: opts?.variant ?? 'error' }]
   emit()
-  setTimeout(() => dismissToast(id), duration)
+  setTimeout(() => dismissToast(id), opts?.duration ?? 6000)
   return id
 }
 

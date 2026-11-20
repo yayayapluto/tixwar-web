@@ -1,6 +1,7 @@
 import type { components } from '@api-types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { postV1OrdersByIdPay } from '@/lib/client'
+import { toast } from '@/lib/toast'
 import { newIdempotencyKey } from '@/lib/utils'
 
 export type PayResult = components['schemas']['PayResult']
@@ -21,6 +22,7 @@ export function usePayOrder() {
       queryClient.invalidateQueries({ queryKey: ['order', id] })
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
+      toast('Payment started', { variant: 'success' })
     },
   })
 }
