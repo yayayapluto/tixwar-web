@@ -15,6 +15,15 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
 
+function redirectLabel(redirect: string): string {
+  if (redirect.startsWith('/events/')) return 'the event you were viewing'
+  if (redirect === '/events') return 'the event list'
+  if (redirect.startsWith('/orders')) return 'your orders'
+  if (redirect.startsWith('/tickets')) return 'your tickets'
+  if (redirect === '/api-keys') return 'API keys'
+  return 'where you left off'
+}
+
 function LoginPage() {
   const navigate = useNavigate()
   const login = useLogin()
@@ -26,8 +35,16 @@ function LoginPage() {
         <CardHeader>
           <CardTitle>Log in</CardTitle>
           <CardDescription>
-            New here?{' '}
-            <Link to="/register" className="underline underline-offset-4">
+            {redirectTo ? (
+              <>Log in to continue to {redirectLabel(redirectTo)}. New here? </>
+            ) : (
+              <>New here? </>
+            )}
+            <Link
+              to="/register"
+              search={redirectTo ? { redirect: redirectTo } : undefined}
+              className="underline underline-offset-4"
+            >
               Create an account
             </Link>
           </CardDescription>
@@ -37,6 +54,7 @@ function LoginPage() {
             mode="login"
             submitLabel="Log in"
             isPending={login.isPending}
+            error={login.error}
             onSubmit={(email, password, rememberMe) =>
               login.mutate(
                 { email, password, rememberMe },

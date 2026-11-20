@@ -3,10 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AuthForm } from '@/features/auth/auth-form'
 import { useRegister } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { ApiError } from '@/lib/errors'
+import { toast } from '@/lib/toast'
 
 export const Route = createFileRoute('/register')({
-  beforeLoad: () => {
-    if (getSession()) throw redirect({ to: '/events' })
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    if (typeof search.redirect === 'string') return { redirect: search.redirect }
+    return {}
+  },
+  beforeLoad: ({ search }) => {
+    if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
   },
   component: RegisterPage,
 })
@@ -14,6 +20,8 @@ export const Route = createFileRoute('/register')({
 function RegisterPage() {
   const navigate = useNavigate()
   const register = useRegister()
+  const { redirect: redirectTo } = Route.useSearch()
+  const emailTaken = register.error instanceof ApiError && register.error.status === 409
 
   return (
     <div className="mx-auto max-w-sm pt-8">
@@ -21,8 +29,12 @@ function RegisterPage() {
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>
-            Already registered?{' '}
-            <Link to="/login" className="underline underline-offset-4">
+            Create an account to buy before it sells out. Already registered?{' '}
+            <Link
+              to="/login"
+              search={redirectTo ? { redirect: redirectTo } : undefined}
+              className="underline underline-offset-4"
+            >
               Log in
             </Link>
           </CardDescription>
@@ -32,10 +44,31 @@ function RegisterPage() {
             mode="register"
             submitLabel="Create account"
             isPending={register.isPending}
+            error={register.error}
             onSubmit={(email, password) =>
-              register.mutate({ email, password }, { onSuccess: () => navigate({ to: '/events' }) })
+              register.mutate(
+                { email, password },
+                {
+                  onSuccess: () => {
+                    toast("You're in — pick your event", { variant: 'success' })
+                    navigate({ to: redirectTo ?? '/events' })
+                  },
+                },
+              )
             }
           />
+          {emailTaken && (
+            <p className="pt-4 text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                search={redirectTo ? { redirect: redirectTo } : undefined}
+                className="underline underline-offset-4"
+              >
+                Log in instead
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

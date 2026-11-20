@@ -2,7 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useSyncExternalStore } from 'react'
 import { clearSession, getSession, type Session, setSession, subscribeSession } from '@/lib/auth'
-import { postV1AuthLogin, postV1AuthLogout, postV1AuthRegister } from '@/lib/client'
+import {
+  postV1AuthForgotPassword,
+  postV1AuthLogin,
+  postV1AuthLogout,
+  postV1AuthRegister,
+  postV1AuthResetPassword,
+} from '@/lib/client'
 
 export function useSession(): Session | null {
   return useSyncExternalStore(subscribeSession, getSession)
@@ -46,6 +52,27 @@ export function useRegister() {
         true,
       )
       return session.user
+    },
+  })
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      const res = await postV1AuthForgotPassword({ body: { email }, throwOnError: true })
+      return res.data.data
+    },
+  })
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async ({ token, password }: { token: string; password: string }) => {
+      const res = await postV1AuthResetPassword({
+        body: { token, password },
+        throwOnError: true,
+      })
+      return res.data.data
     },
   })
 }
