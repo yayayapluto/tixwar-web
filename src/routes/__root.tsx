@@ -4,6 +4,17 @@ import type { LucideIcon } from 'lucide-react'
 import { Bug, CalendarDays, KeyRound, LogOut, Moon, Receipt, Sun, Ticket } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Toaster } from '@/components/toaster'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useLogout, useSession } from '@/features/auth/use-auth'
 import { ThemeProvider, useTheme } from '@/features/theme/theme-context'
@@ -104,6 +115,7 @@ function Header() {
   const { theme, toggle } = useTheme()
   const session = useSession()
   const logout = useLogout()
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
@@ -135,14 +147,30 @@ function Header() {
             )}
           </Button>
           {session ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => logout.mutate()}
-              aria-label="Log out"
-            >
-              <LogOut className="size-4" aria-hidden="true" />
-            </Button>
+            <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Log out">
+                  <LogOut className="size-4" aria-hidden="true" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Log out?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You&apos;ll be signed out on this device and need to log in again to continue.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className={buttonVariants({ variant: 'destructive' })}
+                    onClick={() => logout.mutate()}
+                  >
+                    Log out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : (
             <Link
               to="/login"
