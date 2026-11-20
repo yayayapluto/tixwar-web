@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { dismissToast, useToasts } from '@/lib/toast'
 
 export function Toaster() {
@@ -17,14 +18,15 @@ export function Toaster() {
           className="pointer-events-auto flex w-full items-start gap-3 rounded-lg border border-destructive/40 bg-background p-3 shadow-lg"
         >
           <p className="flex-1 text-sm text-foreground">{toast.message}</p>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => dismissToast(toast.id)}
             aria-label="Dismiss notification"
-            className="-m-1 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       ))}
     </div>

@@ -6,7 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { type Event, type EventStatus, useEvents } from '@/features/events/queries'
 import { formatDate } from '@/lib/utils'
 
@@ -80,19 +86,22 @@ function EventsPage() {
           />
         </div>
         <Select
-          aria-label="Filter by status"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value)
+          value={status === '' ? 'all' : status}
+          onValueChange={(v) => {
+            setStatus(v === 'all' ? '' : v)
             setPage(1)
           }}
-          className="sm:w-44"
         >
-          <option value="">All statuses</option>
-          <option value="ON_SALE">On sale</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="SOLD_OUT">Sold out</option>
-          <option value="ENDED">Ended</option>
+          <SelectTrigger aria-label="Filter by status" className="sm:w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="ON_SALE">On sale</SelectItem>
+            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+            <SelectItem value="SOLD_OUT">Sold out</SelectItem>
+            <SelectItem value="ENDED">Ended</SelectItem>
+          </SelectContent>
         </Select>
         <Button type="submit">Search</Button>
       </form>

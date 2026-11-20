@@ -1,10 +1,17 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { CopyButton } from '@/components/copy-button'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useSession } from '@/features/auth/use-auth'
 import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
@@ -39,6 +46,15 @@ function TierCard({ tier }: { tier: TicketTier }) {
         <p className="text-sm text-muted-foreground">
           {tier.quota} available · max {tier.maxPerUser} per user
         </p>
+        {session?.user.role === 'admin' && (
+          <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
+            <span className="text-muted-foreground">Tier ID</span>
+            <span className="flex items-center gap-1">
+              <code className="font-mono">{tier.id}</code>
+              <CopyButton value={tier.id} label="Tier ID" className="size-6" />
+            </span>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
         </p>
@@ -48,17 +64,17 @@ function TierCard({ tier }: { tier: TicketTier }) {
           </Link>
         ) : (
           <div className="flex gap-2">
-            <Select
-              aria-label="Quantity"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-24"
-            >
-              {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
+            <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
+              <SelectTrigger aria-label="Quantity" className="w-24">
+                <SelectValue placeholder="Qty" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <Button
               className="flex-1"

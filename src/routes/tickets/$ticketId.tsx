@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Download, QrCode } from 'lucide-react'
+import { CopyButton } from '@/components/copy-button'
 import { ErrorState, ListSkeleton } from '@/components/status'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireAuth } from '@/features/auth/route-guard'
+import { useSession } from '@/features/auth/use-auth'
 import { useTicket } from '@/features/tickets/queries'
 import { formatDate } from '@/lib/utils'
 
@@ -27,6 +29,8 @@ async function downloadQr(url: string, filename: string) {
 
 function TicketDetailPage() {
   const { ticketId } = Route.useParams()
+  const session = useSession()
+  const isAdmin = session?.user.role === 'admin'
   const query = useTicket(ticketId)
 
   if (query.isPending) return <ListSkeleton rows={2} />
@@ -50,6 +54,24 @@ function TicketDetailPage() {
           <p className="text-sm text-muted-foreground">
             Event: {ticket.eventId} · Issued {formatDate(ticket.issuedAt)}
           </p>
+          {isAdmin && (
+            <div className="space-y-1 rounded-md border p-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Ticket ID</span>
+                <span className="flex items-center gap-1">
+                  <code className="font-mono">{ticket.id}</code>
+                  <CopyButton value={ticket.id} label="Ticket ID" className="size-6" />
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Tier ID</span>
+                <span className="flex items-center gap-1">
+                  <code className="font-mono">{ticket.tierId}</code>
+                  <CopyButton value={ticket.tierId} label="Tier ID" className="size-6" />
+                </span>
+              </div>
+            </div>
+          )}
           <div className="flex justify-center rounded-lg border bg-white p-4">
             <img
               src={detail.qrUrl}

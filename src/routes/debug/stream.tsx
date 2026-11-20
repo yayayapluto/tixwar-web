@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { requireAdmin } from '@/features/auth/route-guard'
 import {
   type DebugChaosRequest,
@@ -76,18 +82,22 @@ function DebugPage() {
             <div className="space-y-2">
               <Label htmlFor="scenario">Scenario</Label>
               <Select
-                id="scenario"
                 value={loadForm.scenario}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   setLoadForm((f) => ({
                     ...f,
-                    scenario: e.target.value as DebugLoadRequest['scenario'],
+                    scenario: v as DebugLoadRequest['scenario'],
                   }))
                 }
               >
-                <option value="single">Single</option>
-                <option value="crowd">Crowd</option>
-                <option value="abuse">Abuse</option>
+                <SelectTrigger id="scenario">
+                  <SelectValue placeholder="Select scenario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Single</SelectItem>
+                  <SelectItem value="crowd">Crowd</SelectItem>
+                  <SelectItem value="abuse">Abuse</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -160,38 +170,46 @@ function DebugPage() {
             <div className="space-y-2">
               <Label htmlFor="target">Target</Label>
               <Select
-                id="target"
                 value={chaosForm.target}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   setChaosForm((f) => ({
                     ...f,
-                    target: e.target.value as DebugChaosRequest['target'],
+                    target: v as DebugChaosRequest['target'],
                   }))
                 }
               >
-                <option value="gateway">Gateway</option>
-                <option value="worker">Worker</option>
-                <option value="redis">Redis</option>
-                <option value="mongo">Mongo</option>
+                <SelectTrigger id="target">
+                  <SelectValue placeholder="Select target" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gateway">Gateway</SelectItem>
+                  <SelectItem value="worker">Worker</SelectItem>
+                  <SelectItem value="redis">Redis</SelectItem>
+                  <SelectItem value="mongo">Mongo</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="action">Action</Label>
               <Select
-                id="action"
                 value={chaosForm.action}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   setChaosForm((f) => ({
                     ...f,
-                    action: e.target.value as DebugChaosRequest['action'],
+                    action: v as DebugChaosRequest['action'],
                   }))
                 }
               >
-                <option value="fail">Fail</option>
-                <option value="latency">Latency</option>
-                <option value="recover">Recover</option>
-                <option value="failure-rate">Failure rate</option>
-                <option value="slow">Slow</option>
+                <SelectTrigger id="action">
+                  <SelectValue placeholder="Select action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fail">Fail</SelectItem>
+                  <SelectItem value="latency">Latency</SelectItem>
+                  <SelectItem value="recover">Recover</SelectItem>
+                  <SelectItem value="failure-rate">Failure rate</SelectItem>
+                  <SelectItem value="slow">Slow</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

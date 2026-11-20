@@ -3,7 +3,13 @@ import { useState } from 'react'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { requireAuth } from '@/features/auth/route-guard'
 import { type Order, type OrderStatus, useOrders } from '@/features/orders/queries'
 import { ORDER_STATUS_VARIANT } from '@/lib/status'
@@ -48,19 +54,22 @@ function OrdersPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">My orders</h1>
         <Select
-          aria-label="Filter by status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-44"
+          value={status === '' ? 'all' : status}
+          onValueChange={(v) => setStatus(v === 'all' ? '' : v)}
         >
-          <option value="">All statuses</option>
-          <option value="PENDING_PAYMENT">Pending</option>
-          <option value="PAYMENT_QUEUED">Queued</option>
-          <option value="PAID">Paid</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="PAYMENT_FAILED">Failed</option>
-          <option value="EXPIRED">Expired</option>
-          <option value="CANCELLED">Cancelled</option>
+          <SelectTrigger aria-label="Filter by status" className="w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="PENDING_PAYMENT">Pending</SelectItem>
+            <SelectItem value="PAYMENT_QUEUED">Queued</SelectItem>
+            <SelectItem value="PAID">Paid</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="PAYMENT_FAILED">Failed</SelectItem>
+            <SelectItem value="EXPIRED">Expired</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          </SelectContent>
         </Select>
       </div>
 
