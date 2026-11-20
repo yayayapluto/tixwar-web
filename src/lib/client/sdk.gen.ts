@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteV1ApiKeysByIdData, DeleteV1ApiKeysByIdErrors, DeleteV1ApiKeysByIdResponses, DeleteV1EventsByIdData, DeleteV1EventsByIdErrors, DeleteV1EventsByIdResponses, DeleteV1WebhooksEndpointsByIdData, DeleteV1WebhooksEndpointsByIdErrors, DeleteV1WebhooksEndpointsByIdResponses, GetDebugStreamData, GetDebugStreamErrors, GetDebugStreamResponse, GetDebugStreamResponses, GetHealthData, GetHealthResponses, GetMetricsData, GetMetricsResponses, GetReadyData, GetReadyErrors, GetReadyResponses, GetV1ApiKeysData, GetV1ApiKeysErrors, GetV1ApiKeysResponses, GetV1EventsByIdData, GetV1EventsByIdErrors, GetV1EventsByIdResponses, GetV1EventsByIdStatsData, GetV1EventsByIdStatsErrors, GetV1EventsByIdStatsResponses, GetV1EventsByIdStreamData, GetV1EventsByIdStreamErrors, GetV1EventsByIdStreamResponse, GetV1EventsByIdStreamResponses, GetV1EventsData, GetV1EventsErrors, GetV1EventsResponses, GetV1OrdersByIdData, GetV1OrdersByIdErrors, GetV1OrdersByIdResponses, GetV1OrdersByIdStreamData, GetV1OrdersByIdStreamErrors, GetV1OrdersByIdStreamResponse, GetV1OrdersByIdStreamResponses, GetV1OrdersData, GetV1OrdersErrors, GetV1OrdersResponses, GetV1TicketsByIdData, GetV1TicketsByIdErrors, GetV1TicketsByIdResponses, GetV1TicketsData, GetV1TicketsErrors, GetV1TicketsResponses, GetV1WebhooksEndpointsData, GetV1WebhooksEndpointsErrors, GetV1WebhooksEndpointsResponses, PatchV1EventsByIdData, PatchV1EventsByIdErrors, PatchV1EventsByIdResponses, PostDebugChaosData, PostDebugChaosErrors, PostDebugChaosResponses, PostDebugLoadData, PostDebugLoadErrors, PostDebugLoadResponses, PostV1ApiKeysData, PostV1ApiKeysErrors, PostV1ApiKeysResponses, PostV1AuthLoginData, PostV1AuthLoginErrors, PostV1AuthLoginResponses, PostV1AuthLogoutData, PostV1AuthLogoutErrors, PostV1AuthLogoutResponses, PostV1AuthRefreshData, PostV1AuthRefreshErrors, PostV1AuthRefreshResponses, PostV1AuthRegisterData, PostV1AuthRegisterErrors, PostV1AuthRegisterResponses, PostV1EventsByIdTiersBulkData, PostV1EventsByIdTiersBulkErrors, PostV1EventsByIdTiersBulkResponses, PostV1EventsData, PostV1EventsErrors, PostV1EventsResponses, PostV1OrdersByIdCancelData, PostV1OrdersByIdCancelErrors, PostV1OrdersByIdCancelResponses, PostV1OrdersByIdPayData, PostV1OrdersByIdPayErrors, PostV1OrdersByIdPayResponses, PostV1OrdersData, PostV1OrdersErrors, PostV1OrdersResponses, PostV1WebhooksEndpointsData, PostV1WebhooksEndpointsErrors, PostV1WebhooksEndpointsResponses } from './types.gen';
+import type { DeleteV1ApiKeysByIdData, DeleteV1ApiKeysByIdErrors, DeleteV1ApiKeysByIdResponses, DeleteV1EventsByIdData, DeleteV1EventsByIdErrors, DeleteV1EventsByIdResponses, DeleteV1WebhooksEndpointsByIdData, DeleteV1WebhooksEndpointsByIdErrors, DeleteV1WebhooksEndpointsByIdResponses, GetDebugStreamData, GetDebugStreamErrors, GetDebugStreamResponse, GetDebugStreamResponses, GetHealthData, GetHealthResponses, GetMetricsData, GetMetricsResponses, GetReadyData, GetReadyErrors, GetReadyResponses, GetV1ApiKeysData, GetV1ApiKeysErrors, GetV1ApiKeysResponses, GetV1EventsByIdData, GetV1EventsByIdErrors, GetV1EventsByIdResponses, GetV1EventsByIdStatsData, GetV1EventsByIdStatsErrors, GetV1EventsByIdStatsResponses, GetV1EventsByIdStreamData, GetV1EventsByIdStreamErrors, GetV1EventsByIdStreamResponse, GetV1EventsByIdStreamResponses, GetV1EventsData, GetV1EventsErrors, GetV1EventsResponses, GetV1OrdersByIdData, GetV1OrdersByIdErrors, GetV1OrdersByIdResponses, GetV1OrdersByIdStreamData, GetV1OrdersByIdStreamErrors, GetV1OrdersByIdStreamResponse, GetV1OrdersByIdStreamResponses, GetV1OrdersData, GetV1OrdersErrors, GetV1OrdersResponses, GetV1TicketsByIdData, GetV1TicketsByIdErrors, GetV1TicketsByIdResponses, GetV1TicketsData, GetV1TicketsErrors, GetV1TicketsResponses, GetV1WebhooksEndpointsData, GetV1WebhooksEndpointsErrors, GetV1WebhooksEndpointsResponses, PatchV1EventsByIdData, PatchV1EventsByIdErrors, PatchV1EventsByIdResponses, PostDebugChaosData, PostDebugChaosErrors, PostDebugChaosResponses, PostDebugLoadData, PostDebugLoadErrors, PostDebugLoadResponses, PostV1ApiKeysData, PostV1ApiKeysErrors, PostV1ApiKeysResponses, PostV1AuthForgotPasswordData, PostV1AuthForgotPasswordErrors, PostV1AuthForgotPasswordResponses, PostV1AuthLoginData, PostV1AuthLoginErrors, PostV1AuthLoginResponses, PostV1AuthLogoutData, PostV1AuthLogoutErrors, PostV1AuthLogoutResponses, PostV1AuthRefreshData, PostV1AuthRefreshErrors, PostV1AuthRefreshResponses, PostV1AuthRegisterData, PostV1AuthRegisterErrors, PostV1AuthRegisterResponses, PostV1AuthResetPasswordData, PostV1AuthResetPasswordErrors, PostV1AuthResetPasswordResponses, PostV1EventsByIdTiersBulkData, PostV1EventsByIdTiersBulkErrors, PostV1EventsByIdTiersBulkResponses, PostV1EventsData, PostV1EventsErrors, PostV1EventsResponses, PostV1OrdersByIdCancelData, PostV1OrdersByIdCancelErrors, PostV1OrdersByIdCancelResponses, PostV1OrdersByIdPayData, PostV1OrdersByIdPayErrors, PostV1OrdersByIdPayResponses, PostV1OrdersData, PostV1OrdersErrors, PostV1OrdersResponses, PostV1WebhooksEndpointsData, PostV1WebhooksEndpointsErrors, PostV1WebhooksEndpointsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -59,6 +59,30 @@ export const postV1AuthRefresh = <ThrowOnError extends boolean = false>(options:
  */
 export const postV1AuthLogout = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthLogoutData, ThrowOnError>): RequestResult<PostV1AuthLogoutResponses, PostV1AuthLogoutErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthLogoutResponses, PostV1AuthLogoutErrors, ThrowOnError>({
     url: '/v1/auth/logout',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Request a password reset link (generic response, never reveals account existence)
+ */
+export const postV1AuthForgotPassword = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthForgotPasswordData, ThrowOnError>): RequestResult<PostV1AuthForgotPasswordResponses, PostV1AuthForgotPasswordErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthForgotPasswordResponses, PostV1AuthForgotPasswordErrors, ThrowOnError>({
+    url: '/v1/auth/forgot-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reset password with a token from the emailed link (single use, expires)
+ */
+export const postV1AuthResetPassword = <ThrowOnError extends boolean = false>(options: Options<PostV1AuthResetPasswordData, ThrowOnError>): RequestResult<PostV1AuthResetPasswordResponses, PostV1AuthResetPasswordErrors, ThrowOnError> => (options.client ?? client).post<PostV1AuthResetPasswordResponses, PostV1AuthResetPasswordErrors, ThrowOnError>({
+    url: '/v1/auth/reset-password',
     ...options,
     headers: {
         'Content-Type': 'application/json',

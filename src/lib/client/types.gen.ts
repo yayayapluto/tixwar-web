@@ -18,6 +18,15 @@ export type RefreshRequest = {
     refreshToken: string;
 };
 
+export type ForgotPasswordRequest = {
+    email: string;
+};
+
+export type ResetPasswordRequest = {
+    token: string;
+    password: string;
+};
+
 export type CreateEventRequest = {
     name: string;
     description?: string;
@@ -149,6 +158,10 @@ export type RefreshResult = {
     expiresIn: number;
 };
 
+export type MessageResult = {
+    message: string;
+};
+
 export type Event = {
     id: string;
     name: string;
@@ -182,6 +195,8 @@ export type EventDetail = {
         saleStartsAt: string;
         saleEndsAt: string;
         maxPerUser: number;
+        sold: number;
+        remaining: number;
     }>;
 };
 
@@ -213,6 +228,8 @@ export type TicketTier = {
     saleStartsAt: string;
     saleEndsAt: string;
     maxPerUser: number;
+    sold: number;
+    remaining: number;
 };
 
 export type EventCreateResult = {
@@ -509,6 +526,76 @@ export type PostV1AuthLogoutResponses = {
 };
 
 export type PostV1AuthLogoutResponse = PostV1AuthLogoutResponses[keyof PostV1AuthLogoutResponses];
+
+export type PostV1AuthForgotPasswordData = {
+    body: ForgotPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/auth/forgot-password';
+};
+
+export type PostV1AuthForgotPasswordErrors = {
+    /**
+     * RFC 7807 problem response (400)
+     */
+    400: Problem;
+    /**
+     * RFC 7807 problem response (429)
+     */
+    429: Problem;
+};
+
+export type PostV1AuthForgotPasswordError = PostV1AuthForgotPasswordErrors[keyof PostV1AuthForgotPasswordErrors];
+
+export type PostV1AuthForgotPasswordResponses = {
+    /**
+     * Generic confirmation; a link is emailed only if the account exists
+     */
+    200: {
+        data: MessageResult;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type PostV1AuthForgotPasswordResponse = PostV1AuthForgotPasswordResponses[keyof PostV1AuthForgotPasswordResponses];
+
+export type PostV1AuthResetPasswordData = {
+    body: ResetPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/auth/reset-password';
+};
+
+export type PostV1AuthResetPasswordErrors = {
+    /**
+     * RFC 7807 problem response (400)
+     */
+    400: Problem;
+    /**
+     * RFC 7807 problem response (401)
+     */
+    401: Problem;
+    /**
+     * RFC 7807 problem response (429)
+     */
+    429: Problem;
+};
+
+export type PostV1AuthResetPasswordError = PostV1AuthResetPasswordErrors[keyof PostV1AuthResetPasswordErrors];
+
+export type PostV1AuthResetPasswordResponses = {
+    /**
+     * Password reset; all sessions revoked
+     */
+    200: {
+        data: MessageResult;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type PostV1AuthResetPasswordResponse = PostV1AuthResetPasswordResponses[keyof PostV1AuthResetPasswordResponses];
 
 export type GetV1ApiKeysData = {
     body?: never;

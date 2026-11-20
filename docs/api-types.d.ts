@@ -14,6 +14,13 @@ export interface components {
     "RefreshRequest": {
       "refreshToken": string;
     };
+    "ForgotPasswordRequest": {
+      "email": string;
+    };
+    "ResetPasswordRequest": {
+      "token": string;
+      "password": string;
+    };
     "CreateEventRequest": {
       "name": string;
       "description"?: string;
@@ -128,6 +135,9 @@ export interface components {
       "tokenType": "Bearer";
       "expiresIn": number;
     };
+    "MessageResult": {
+      "message": string;
+    };
     "Event": {
       "id": string;
       "name": string;
@@ -160,6 +170,8 @@ export interface components {
           "saleStartsAt": string;
           "saleEndsAt": string;
           "maxPerUser": number;
+          "sold": number;
+          "remaining": number;
         }>;
     };
     "EventListItem": {
@@ -189,6 +201,8 @@ export interface components {
       "saleStartsAt": string;
       "saleEndsAt": string;
       "maxPerUser": number;
+      "sold": number;
+      "remaining": number;
     };
     "EventCreateResult": {
       "id": string;
@@ -388,6 +402,35 @@ export interface paths {
         "204": void;
         "400": components["schemas"]["Problem"];
         "401": components["schemas"]["Problem"];
+      };
+    };
+  };
+  "/v1/auth/forgot-password": {
+    post: {
+      requestBody: components["schemas"]["ForgotPasswordRequest"];
+      responses: {
+        "200": {
+          "data": components["schemas"]["MessageResult"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "400": components["schemas"]["Problem"];
+        "429": components["schemas"]["Problem"];
+      };
+    };
+  };
+  "/v1/auth/reset-password": {
+    post: {
+      requestBody: components["schemas"]["ResetPasswordRequest"];
+      responses: {
+        "200": {
+          "data": components["schemas"]["MessageResult"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "400": components["schemas"]["Problem"];
+        "401": components["schemas"]["Problem"];
+        "429": components["schemas"]["Problem"];
       };
     };
   };

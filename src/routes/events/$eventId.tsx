@@ -88,6 +88,12 @@ function TierCard({
   const now = Date.now()
   const saleOpen = now >= saleStart && now <= saleEnd
 
+  // remaining is server-computed (max(0, quota - sold)); it is only absent
+  // on an older API response — then fall back to total quota, never a guess.
+  const remaining = typeof tier.remaining === 'number' ? tier.remaining : null
+  const soldOut = remaining !== null && remaining <= 0
+  const lowStock = remaining !== null && remaining > 0 && remaining <= 10
+
   return (
     <Card className={cn(cheapest && 'border-primary')}>
       <CardHeader>
@@ -100,9 +106,23 @@ function TierCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Total quota {tier.quota} · max {tier.maxPerUser} per user
-        </p>
+        {remaining === null ? (
+          <p className="text-sm text-muted-foreground">
+            Total quota {tier.quota} · max {tier.maxPerUser} per user
+          </p>
+        ) : soldOut ? (
+          <p className="text-sm font-medium text-destructive">Sold out</p>
+        ) : (
+          <p
+            className={cn(
+              'text-sm',
+              lowStock ? 'font-medium text-destructive' : 'text-muted-foreground',
+            )}
+          >
+            {lowStock ? `Only ${remaining} left` : `${remaining} left`} · max {tier.maxPerUser} per
+            user
+          </p>
+        )}
         {session?.user.role === 'admin' && (
           <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
             <span className="text-muted-foreground">Tier ID</span>
@@ -123,9 +143,15 @@ function TierCard({
             </p>
           ))}
         {!session ? (
-          <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
-            Log in to buy
-          </Link>
+          soldOut ? (
+            <Button className="w-full" disabled>
+              Sold out
+            </Button>
+          ) : (
+            <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
+              Log in to buy
+            </Link>
+          )
         ) : session.user.role === 'admin' ? (
           <>
             <p className="text-sm text-muted-foreground">
@@ -149,6 +175,7 @@ function TierCard({
               </span>
               <Select
                 value={String(quantity)}
+                disabled={soldOut}
                 onValueChange={(v) => {
                   setQuantity(Number(v))
                   setOrderError(null)
@@ -169,7 +196,7 @@ function TierCard({
               </Select>
               <Button
                 className="flex-1"
-                disabled={!saleOpen || createOrder.isPending}
+                disabled={!saleOpen || soldOut || createOrder.isPending}
                 onClick={() => {
                   setOrderError(null)
                   createOrder.mutate(
@@ -184,9 +211,11 @@ function TierCard({
               >
                 {createOrder.isPending
                   ? 'Reserving…'
-                  : saleOpen
-                    ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
-                    : 'Not on sale'}
+                  : soldOut
+                    ? 'Sold out'
+                    : saleOpen
+                      ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
+                      : 'Not on sale'}
               </Button>
             </div>
             {orderError && (
