@@ -37,9 +37,9 @@ function LoginPage() {
             mode="login"
             submitLabel="Log in"
             isPending={login.isPending}
-            onSubmit={(email, password) =>
+            onSubmit={(email, password, rememberMe) =>
               login.mutate(
-                { email, password },
+                { email, password, rememberMe },
                 { onSuccess: () => navigate({ to: redirectTo ?? '/events' }) },
               )
             }

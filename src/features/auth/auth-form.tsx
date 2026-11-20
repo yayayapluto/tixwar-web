@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -12,16 +13,17 @@ export function AuthForm({
 }: {
   mode: 'login' | 'register'
   submitLabel: string
-  onSubmit: (email: string, password: string) => void
+  onSubmit: (email: string, password: string, rememberMe?: boolean) => void
   isPending: boolean
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    onSubmit(email, password)
+    onSubmit(email, password, rememberMe)
   }
 
   return (
@@ -76,6 +78,18 @@ export function AuthForm({
           </Button>
         </div>
       </div>
+      {mode === 'login' && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="remember-me"
+            checked={rememberMe}
+            onCheckedChange={(checked) => setRememberMe(checked === true)}
+          />
+          <Label htmlFor="remember-me" className="cursor-pointer font-normal">
+            Remember me
+          </Label>
+        </div>
+      )}
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Loading…' : submitLabel}
       </Button>
