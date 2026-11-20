@@ -1,7 +1,8 @@
 import { useQueries } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { QrCode } from 'lucide-react'
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import { TicketsListSkeleton, TicketsPageSkeleton } from '@/components/skeletons'
+import { EmptyState, ErrorState } from '@/components/status'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/tickets/')({
     requireCustomer(location.href)
   },
   component: TicketsPage,
+  pendingComponent: TicketsPageSkeleton,
 })
 
 function TicketCard({
@@ -153,7 +155,7 @@ function TicketsPage() {
         )}
       </h1>
       {query.isPending ? (
-        <ListSkeleton rows={3} />
+        <TicketsListSkeleton />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : (tickets ?? []).length === 0 ? (

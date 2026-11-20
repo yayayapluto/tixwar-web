@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Activity, ChevronLeft } from 'lucide-react'
 import { useId, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import { EventDetailSkeleton } from '@/components/skeletons'
+import { EmptyState, ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +34,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/$eventId')({
   component: EventDetailPage,
+  pendingComponent: EventDetailSkeleton,
 })
 
 // Display-only title case for raw API values ("music" -> "Music");
@@ -258,7 +260,7 @@ function EventDetailPage() {
   const saleWindow = sharedSaleWindow ? sortedTiers[0] : undefined
   const saleSecondsLeft = useCountdown(saleWindow?.saleEndsAt)
 
-  if (event.isPending) return <ListSkeleton rows={3} />
+  if (event.isPending) return <EventDetailSkeleton />
   if (event.isError) return <ErrorState error={event.error} onRetry={() => event.refetch()} />
 
   const detail = event.data.data

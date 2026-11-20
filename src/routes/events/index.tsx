@@ -2,7 +2,8 @@ import { useQueries } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import { EventsGridSkeleton, EventsPageSkeleton } from '@/components/skeletons'
+import { EmptyState, ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -14,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { EventListItem, EventStatus } from '@/features/events/queries'
+import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { getV1Events } from '@/lib/client'
 import { STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
@@ -68,6 +69,7 @@ export const Route = createFileRoute('/events/')({
     sort: isSortKey(search.sort) ? search.sort : 'ending',
   }),
   component: EventsPage,
+  pendingComponent: EventsPageSkeleton,
 })
 
 // Display-only title case for raw API values ("music" -> "Music");
@@ -221,6 +223,18 @@ function EventsPage() {
     }),
   })
 
+  // Categories come from a separate query WITHOUT the category filter:
+  // deriving them from the filtered list shrank the chips to just the
+  // active category (All + Conference). Same q/status, limit 100 is the
+  // API maximum, so one page covers the whole catalog while it stays
+  // under 100 events. Union with the loaded items so the chips never
+  // shrink below what the list itself shows.
+  const categoryQuery = useEvents({
+    q: appliedQ,
+    status: status ? (status as EventStatus) : undefined,
+    limit: 100,
+  })
+
   const loadedItems: Array<EventListItem> = []
   for (const p of pages) {
     if (!p.data) continue
@@ -241,7 +255,10 @@ function EventsPage() {
   // Category chips come from loaded items only, never hardcoded. While a
   // category filter is active every loaded item has that one category, so the
   // active category is always kept visible.
-  const categorySet = new Set(loadedItems.map((e) => e.category))
+  const categorySet = new Set([
+    ...loadedItems.map((e) => e.category),
+    ...(categoryQuery.data?.data.map((e) => e.category) ?? []),
+  ])
   if (category !== '') categorySet.add(category)
   const knownCategories = [...categorySet].sort((a, b) => a.localeCompare(b))
   const visibleCategories = showAllCategories
@@ -408,7 +425,7 @@ function EventsPage() {
       )}
 
       {isPending ? (
-        <ListSkeleton rows={4} />
+        <EventsGridSkeleton />
       ) : firstError ? (
         <ErrorState error={firstError} onRetry={refetchAll} />
       ) : items.length === 0 ? (
@@ -438,7 +455,7 @@ function EventsPage() {
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-1" />
           {isFetching ? (
-            <ListSkeleton rows={2} />
+            <EventsGridSkeleton count={2} />
           ) : !hasMore ? (
             <div className="flex flex-col items-center gap-2">
               <p role="status" className="text-center text-sm text-muted-foreground">

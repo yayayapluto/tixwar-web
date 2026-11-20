@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { ListSkeleton } from '@/components/status'
+import { EventsPageSkeleton } from '@/components/skeletons'
 
 export const Route = createFileRoute('/')({
   beforeLoad: () => {
@@ -7,8 +7,7 @@ export const Route = createFileRoute('/')({
     // analytics params survive the redirect instead of landing on a bare /events.
     throw redirect({ to: '/events', search: (prev) => prev })
   },
-  // Shown while the redirect resolves, so a slow/cold load shows a loading
-  // state (with a screen-reader announcement via role="status") instead of
-  // an empty shell with no active nav state.
-  pendingComponent: () => <ListSkeleton rows={4} />,
+  // Shown while the redirect resolves — the redirect lands on /events, so
+  // the skeleton mirrors the events page instead of generic rows.
+  pendingComponent: EventsPageSkeleton,
 })

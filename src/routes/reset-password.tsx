@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { Eye, EyeOff } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
+import { AuthPageSkeleton } from '@/components/skeletons'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/reset-password')({
     if (getSession()) throw redirect({ to: '/events' })
   },
   component: ResetPasswordPage,
+  pendingComponent: () => <AuthPageSkeleton variant="reset" />,
 })
 
 function ResetPasswordPage() {

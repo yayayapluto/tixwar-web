@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import { ApiKeysListSkeleton, ApiKeysPageSkeleton } from '@/components/skeletons'
+import { EmptyState, ErrorState } from '@/components/status'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ export const Route = createFileRoute('/api-keys/')({
     requireAdmin()
   },
   component: ApiKeysPage,
+  pendingComponent: ApiKeysPageSkeleton,
 })
 
 function mutationErrorMessage(error: unknown): string {
@@ -297,7 +299,7 @@ function ApiKeysPage() {
       )}
 
       {query.isPending ? (
-        <ListSkeleton rows={2} />
+        <ApiKeysListSkeleton />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data.data.length === 0 ? (

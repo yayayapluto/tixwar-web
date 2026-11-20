@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 import { CopyButton } from '@/components/copy-button'
-import { ErrorState, ListSkeleton } from '@/components/status'
+import { OrderDetailSkeleton } from '@/components/skeletons'
+import { ErrorState } from '@/components/status'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/orders/$orderId')({
     requireCustomer(location.href)
   },
   component: OrderDetailPage,
+  pendingComponent: OrderDetailSkeleton,
 })
 
 function OrderDetailPage() {
@@ -73,7 +75,7 @@ function OrderDetailPage() {
     },
   })
 
-  if (query.isPending) return <ListSkeleton rows={2} />
+  if (query.isPending) return <OrderDetailSkeleton />
   if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />
   if (!order) return <ErrorState error={new Error('Order not found')} />
 

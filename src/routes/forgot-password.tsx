@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
+import { AuthPageSkeleton } from '@/components/skeletons'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/forgot-password')({
     if (getSession()) throw redirect({ to: '/events' })
   },
   component: ForgotPasswordPage,
+  pendingComponent: () => <AuthPageSkeleton variant="forgot" />,
 })
 
 function ForgotPasswordPage() {

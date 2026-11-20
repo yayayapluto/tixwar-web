@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { AuthPageSkeleton } from '@/components/skeletons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AuthForm } from '@/features/auth/auth-form'
 import { useLogin } from '@/features/auth/use-auth'
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/login')({
     if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
   },
   component: LoginPage,
+  pendingComponent: () => <AuthPageSkeleton variant="login" />,
 })
 
 function redirectLabel(redirect: string): string {

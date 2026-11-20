@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Activity } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
+import { DebugPageSkeleton, TraceListSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
 import {
   AlertDialog,
@@ -38,6 +39,7 @@ export const Route = createFileRoute('/debug/stream')({
     requireAdmin()
   },
   component: DebugPage,
+  pendingComponent: DebugPageSkeleton,
 })
 
 const MAX_TRACES = 50
@@ -420,10 +422,7 @@ function DebugPage() {
 
           {traces.length === 0 ? (
             connectionStatus === 'connecting' ? (
-              <EmptyState
-                title="Connecting to the trace stream…"
-                description="Waiting for the first event from the API."
-              />
+              <TraceListSkeleton />
             ) : connectionStatus === 'paused' ? (
               <EmptyState
                 title="Stream paused"

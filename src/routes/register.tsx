@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { AuthPageSkeleton } from '@/components/skeletons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AuthForm } from '@/features/auth/auth-form'
 import { useRegister } from '@/features/auth/use-auth'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/register')({
     if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
   },
   component: RegisterPage,
+  pendingComponent: () => <AuthPageSkeleton variant="register" />,
 })
 
 function RegisterPage() {

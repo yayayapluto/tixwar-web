@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
+import { OrdersGridSkeleton, OrdersPageSkeleton } from '@/components/skeletons'
+import { EmptyState, ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/orders/')({
     requireCustomer(location.href)
   },
   component: OrdersPage,
+  pendingComponent: OrdersPageSkeleton,
 })
 
 function OrderCard({ order }: { order: Order }) {
@@ -146,7 +148,7 @@ function OrdersPage() {
       </div>
 
       {query.isPending ? (
-        <ListSkeleton rows={3} />
+        <OrdersGridSkeleton />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : orders.length === 0 ? (

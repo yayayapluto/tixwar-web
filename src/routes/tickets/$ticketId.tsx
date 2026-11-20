@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
+import { TicketDetailSkeleton } from '@/components/skeletons'
 import { ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/tickets/$ticketId')({
     requireCustomer(location.href)
   },
   component: TicketDetailPage,
+  pendingComponent: TicketDetailSkeleton,
 })
 
 async function downloadQr(url: string, filename: string) {
@@ -95,18 +97,7 @@ function TicketDetailPage() {
     void handleRefresh()
   }, [qrExpired, qrUrl, query.isFetching, handleRefresh])
 
-  if (query.isPending)
-    return (
-      <div role="status" aria-busy="true" className="space-y-4">
-        <span className="sr-only">Loading…</span>
-        <Skeleton className="h-8 w-2/3" />
-        <div className="space-y-3 rounded-xl border p-4">
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="mx-auto aspect-square w-full max-w-56" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </div>
-    )
+  if (query.isPending) return <TicketDetailSkeleton />
   if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />
 
   const detail = query.data.data
