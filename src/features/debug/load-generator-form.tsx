@@ -11,6 +11,88 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { type DebugLoadRequest, useDebugLoad } from '@/features/debug/queries'
+import { ApiError } from '@/lib/errors'
+import { toast } from '@/lib/toast'
+
+type LoadSummary = {
+  scenario: string
+  requests: number
+  concurrency: number
+  succeeded: number
+  failed: number
+  requestsPerSecond: number
+  p95Ms: number
+}
+
+type LastRun = {
+  scenario: string
+  requests: number
+  concurrency: number
+  summary: LoadSummary | null
+}
+
+// The generated client types the load endpoint as 200: void, but the API
+// actually returns an envelope `{ data: LoadSummary }`. Narrow it at runtime.
+function parseLoadSummary(input: unknown): LoadSummary | null {
+  if (typeof input !== 'object' || input === null) return null
+  const data = (input as { data?: unknown }).data
+  if (typeof data !== 'object' || data === null) return null
+  const d = data as Record<string, unknown>
+  if (
+    typeof d.scenario !== 'string' ||
+    typeof d.requests !== 'number' ||
+    typeof d.concurrency !== 'number' ||
+    typeof d.succeeded !== 'number' ||
+    typeof d.failed !== 'number' ||
+    typeof d.requestsPerSecond !== 'number' ||
+    typeof d.p95Ms !== 'number'
+  ) {
+    return null
+  }
+  return {
+    scenario: d.scenario,
+    requests: d.requests,
+    concurrency: d.concurrency,
+    succeeded: d.succeeded,
+    failed: d.failed,
+    requestsPerSecond: d.requestsPerSecond,
+    p95Ms: d.p95Ms,
+  }
+}
+
+// The global MutationCache.onError already toasts 4xx errors, so a per-mutation
+// onError only needs to cover the rest (5xx, network, unknown) to avoid a double toast.
+function toastMutationError(error: unknown) {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) return
+  toast(error instanceof ApiError ? error.detail : 'Something went wrong. Please try again.')
+}
+
+function validate(form: DebugLoadRequest): string | null {
+  if (form.eventId && !/^evt_[A-Za-z0-9_-]{1,64}$/.test(form.eventId)) {
+    return 'Event ID must look like evt_…'
+  }
+  if (form.tierId && !/^tier_[A-Za-z0-9_-]{1,64}$/.test(form.tierId)) {
+    return 'Tier ID must look like tier_…'
+  }
+  const concurrency = form.concurrency
+  if (
+    !Number.isInteger(concurrency) ||
+    concurrency === undefined ||
+    concurrency < 1 ||
+    concurrency > 200
+  ) {
+    return 'Concurrency must be a whole number between 1 and 200.'
+  }
+  const requests = form.requests
+  if (!Number.isInteger(requests) || requests === undefined || requests < 1 || requests > 5000) {
+    return 'Requests must be a whole number between 1 and 5000.'
+  }
+  const quantity = form.quantity ?? 1
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+    return 'Quantity must be a whole number between 1 and 10.'
+  }
+  return null
+}
 
 export function LoadGeneratorForm({
   initialEventId,
@@ -28,6 +110,35 @@ export function LoadGeneratorForm({
     requests: 100,
     quantity: 1,
   })
+  const [error, setError] = useState<string | null>(null)
+  const [lastRun, setLastRun] = useState<LastRun | null>(null)
+
+  function runLoad() {
+    const problem = validate(form)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    setError(null)
+    load.mutate(form, {
+      onSuccess: (res) => {
+        const summary = parseLoadSummary(res.data)
+        setLastRun({
+          scenario: form.scenario,
+          requests: form.requests ?? 0,
+          concurrency: form.concurrency ?? 0,
+          summary,
+        })
+        toast(
+          summary
+            ? `Load test finished: ${summary.succeeded} succeeded, ${summary.failed} failed of ${summary.requests} requests`
+            : `Load test finished: ${form.scenario} · ${form.requests ?? 0} requests`,
+          { variant: 'success' },
+        )
+      },
+      onError: toastMutationError,
+    })
+  }
 
   return (
     <div className="space-y-3">
@@ -79,6 +190,8 @@ export function LoadGeneratorForm({
             id="concurrency"
             type="number"
             inputMode="numeric"
+            min={1}
+            max={200}
             value={form.concurrency}
             onChange={(e) => setForm((f) => ({ ...f, concurrency: Number(e.target.value) }))}
           />
@@ -89,6 +202,8 @@ export function LoadGeneratorForm({
             id="requests"
             type="number"
             inputMode="numeric"
+            min={1}
+            max={5000}
             value={form.requests}
             onChange={(e) => setForm((f) => ({ ...f, requests: Number(e.target.value) }))}
           />
@@ -99,15 +214,31 @@ export function LoadGeneratorForm({
             id="quantity"
             type="number"
             inputMode="numeric"
+            min={1}
+            max={10}
             value={form.quantity ?? 1}
             onChange={(e) => setForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
           />
         </div>
       </div>
-      <Button onClick={() => load.mutate(form)} disabled={load.isPending} className="w-full">
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+      <Button onClick={runLoad} disabled={load.isPending} className="w-full">
         <Activity className="size-4" aria-hidden="true" />
         {load.isPending ? 'Running…' : 'Run load'}
       </Button>
+      {lastRun && (
+        <p className="text-xs text-muted-foreground">
+          Last run: {lastRun.scenario} · {lastRun.requests} requests · concurrency{' '}
+          {lastRun.concurrency}
+          {lastRun.summary
+            ? ` · ${lastRun.summary.succeeded} succeeded, ${lastRun.summary.failed} failed · ${Math.round(lastRun.summary.requestsPerSecond)} req/s · p95 ${Math.round(lastRun.summary.p95Ms)} ms`
+            : ' · finished, no summary returned'}
+        </p>
+      )}
     </div>
   )
 }
