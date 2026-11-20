@@ -59,7 +59,7 @@ function BottomBar() {
       {pill && (
         <span
           aria-hidden="true"
-          className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-secondary transition-[transform,width] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-brand-gradient shadow-md shadow-orange-500/40 transition-[transform,width] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           style={{ transform: `translateX(${pill.left}px)`, width: pill.width }}
         />
       )}
@@ -77,7 +77,7 @@ function BottomBar() {
             aria-current={active ? 'page' : undefined}
             className={cn(
               'relative z-10 flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,color] duration-150 ease-out active:scale-[0.98]',
-              active ? 'text-secondary-foreground' : 'text-muted-foreground hover:text-foreground',
+              active ? 'text-white' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             <span key={String(active)} className={active ? 'animate-pop' : undefined}>
@@ -100,9 +100,11 @@ function Header() {
   return (
     <header className="sticky top-0 z-10 border-b bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
-        <Link to="/events" className="flex items-center gap-2 font-semibold">
-          <Ticket className="size-5" aria-hidden="true" />
-          TixWar
+        <Link to="/events" className="group flex items-center gap-2 font-extrabold tracking-tight">
+          <span className="bg-brand-gradient flex size-8 items-center justify-center rounded-xl text-white shadow-md shadow-orange-500/30 transition-transform duration-300 group-hover:rotate-12">
+            <Ticket className="size-4" aria-hidden="true" />
+          </span>
+          Tix<span className="text-brand-gradient">War</span>
         </Link>
         <div className="flex items-center gap-1">
           <Button

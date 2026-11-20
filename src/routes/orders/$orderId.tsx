@@ -22,7 +22,7 @@ import { usePayOrder } from '@/features/payments/queries'
 import { useOrderStream } from '@/features/realtime/use-order-stream'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 
 export const Route = createFileRoute('/orders/$orderId')({
   beforeLoad: ({ location }) => {
@@ -53,7 +53,7 @@ function OrderDetailPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-2">
-        <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold">
+        <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold tracking-tight">
           {eventQuery.data?.data.name ?? 'Order'}
         </h1>
         <Badge
@@ -93,13 +93,42 @@ function OrderDetailPage() {
           </p>
           <p className="text-muted-foreground">Attempts: {order.paymentAttempts}</p>
           {order.status === 'PENDING_PAYMENT' && secondsLeft !== null && (
-            <p
-              className={
-                secondsLeft < 60 ? 'font-medium text-destructive' : 'text-muted-foreground'
-              }
-            >
-              Expires in {formatCountdown(secondsLeft)}
-            </p>
+            <div className="rounded-xl bg-zinc-900 p-4 text-white dark:bg-zinc-800">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-xs font-extrabold tracking-widest text-white/70 uppercase">
+                  Expires in
+                </p>
+                <p
+                  className={cn(
+                    'text-2xl font-extrabold tabular-nums',
+                    secondsLeft < 60 && 'text-red-300',
+                  )}
+                >
+                  {formatCountdown(secondsLeft)}
+                </p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/20">
+                <div
+                  className="h-full rounded-full bg-brand-gradient transition-[width] duration-1000 ease-linear"
+                  style={{
+                    width: `${Math.max(
+                      0,
+                      Math.min(
+                        100,
+                        (secondsLeft /
+                          Math.max(
+                            1,
+                            (new Date(order.expiresAt).getTime() -
+                              new Date(order.createdAt).getTime()) /
+                              1000,
+                          )) *
+                          100,
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
           )}
           {queued && (
             <p className="text-sm text-muted-foreground">

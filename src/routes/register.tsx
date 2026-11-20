@@ -16,8 +16,9 @@ function RegisterPage() {
   const register = useRegister()
 
   return (
-    <div className="mx-auto max-w-sm pt-8">
-      <Card>
+    <div className="animate-fade-up mx-auto max-w-sm pt-8">
+      <Card className="overflow-hidden">
+        <div aria-hidden="true" className="h-1.5 bg-brand-gradient" />
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>

@@ -14,7 +14,7 @@ import {
 import { requireCustomer } from '@/features/auth/route-guard'
 import { type Order, type OrderStatus, useOrders } from '@/features/orders/queries'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/orders/')({
   beforeLoad: ({ location }) => {
@@ -22,6 +22,15 @@ export const Route = createFileRoute('/orders/')({
   },
   component: OrdersPage,
 })
+
+const ORDER_ACCENT: Record<string, string> = {
+  success: 'border-l-success',
+  warning: 'border-l-warning',
+  destructive: 'border-l-destructive',
+  default: 'border-l-primary',
+  secondary: 'border-l-muted-foreground/40',
+  outline: 'border-l-muted-foreground/40',
+}
 
 function OrderCard({ order, index }: { order: Order; index: number }) {
   return (
@@ -31,7 +40,13 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
       className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
-      <Card className="transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]">
+      <Card
+        className={cn(
+          'border-l-4 transition-[transform,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:border-ring hover:shadow-md active:scale-[0.98]',
+          ORDER_ACCENT[ORDER_STATUS_VARIANT[order.status] ?? 'secondary'] ??
+            'border-l-muted-foreground/40',
+        )}
+      >
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="min-w-0 flex-1 truncate">Order #{order.id.slice(-8)}</CardTitle>
@@ -58,7 +73,7 @@ function OrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="min-w-0 text-2xl font-semibold">My orders</h1>
+        <h1 className="min-w-0 text-2xl font-extrabold tracking-tight">My orders</h1>
         <Select
           value={status === '' ? 'all' : status}
           onValueChange={(v) => setStatus(v === 'all' ? '' : v)}
