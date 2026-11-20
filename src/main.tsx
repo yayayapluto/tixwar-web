@@ -1,11 +1,16 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { PageSpinner } from '@/components/status'
 import { routeTree } from './routeTree.gen'
 import '@/lib/api'
 import './index.css'
 
-const router = createRouter({ routeTree })
+const router = createRouter({
+  routeTree,
+  defaultPendingMs: 0,
+  defaultPendingComponent: PageSpinner,
+})
 
 declare module '@tanstack/react-router' {
   interface Register {
