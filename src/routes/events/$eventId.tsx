@@ -100,6 +100,7 @@ function TierCard({ tier }: { tier: TicketTier }) {
 
 function EventDetailPage() {
   const { eventId } = Route.useParams()
+  const session = useSession()
   const event = useEvent(eventId)
   const stats = useEventStats(eventId)
   useStockStream(eventId, true)
@@ -121,6 +122,15 @@ function EventDetailPage() {
         </p>
         <p className="text-sm text-muted-foreground">{formatDate(detail.startsAt)}</p>
         {detail.description && <p className="text-sm">{detail.description}</p>}
+        {session?.user.role === 'admin' && (
+          <div className="flex items-center justify-between gap-2 rounded-md border p-2 text-xs">
+            <span className="text-muted-foreground">Event ID</span>
+            <span className="flex items-center gap-1">
+              <code className="font-mono">{detail.id}</code>
+              <CopyButton value={detail.id} label="Event ID" className="size-6" />
+            </span>
+          </div>
+        )}
       </div>
 
       {stats.data && (
