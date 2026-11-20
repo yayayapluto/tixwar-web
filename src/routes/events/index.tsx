@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
+import { useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/')({
@@ -30,7 +31,29 @@ function titleCase(value: string) {
     .join(' ')
 }
 
+// Sale countdown for cards: HH:MM:SS while under a day out, "Nd Nh" beyond
+// that (the shared formatCountdown is M:SS only, which reads badly for
+// multi-hour deadlines).
+function formatSaleCountdown(totalSeconds: number): string {
+  const days = Math.floor(totalSeconds / 86400)
+  if (days > 0) {
+    return `${days}d ${Math.floor((totalSeconds % 86400) / 3600)}h`
+  }
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 function EventCard({ event }: { event: EventListItem }) {
+  // Same deadline-based countdown as the ticket detail page: the interval
+  // recomputes from saleEndsAt every second, so it never drifts when the
+  // tab is backgrounded.
+  const saleSecondsLeft = useCountdown(event.saleEndsAt ?? undefined)
+  const saleLive = saleSecondsLeft !== null && saleSecondsLeft > 0
+  // Destructive token only for a sale ending in under an hour (DESIGN.md).
+  const saleEndingSoon = saleLive && saleSecondsLeft < 3600
+  const lowStock = event.remaining > 0 && event.remaining <= 10
   return (
     <Link
       to="/events/$eventId"
@@ -58,6 +81,19 @@ function EventCard({ event }: { event: EventListItem }) {
           </p>
           <p>{event.venue}</p>
           <p>{formatDate(event.startsAt)}</p>
+          {saleLive && (
+            <p
+              className={cn(
+                'text-sm font-medium tabular-nums',
+                saleEndingSoon && 'text-destructive',
+              )}
+            >
+              Sale ends in {formatSaleCountdown(saleSecondsLeft)}
+            </p>
+          )}
+          {lowStock && (
+            <p className="text-sm font-medium text-destructive">Only {event.remaining} left</p>
+          )}
           {event.minPrice != null && (
             <p className="pt-1 text-base font-semibold tabular-nums text-foreground">
               From {formatCurrency(event.minPrice)}

@@ -175,6 +175,10 @@ export interface components {
       "updatedAt": string;
       "minPrice": number | null;
       "maxPrice": number | null;
+      "saleEndsAt": string | null;
+      "totalQuota": number;
+      "totalSold": number;
+      "remaining": number;
     };
     "TicketTier": {
       "id": string;
