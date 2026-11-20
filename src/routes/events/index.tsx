@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,12 +55,40 @@ function EventsPage() {
   const [appliedQ, setAppliedQ] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
+  const [items, setItems] = useState<Array<Event>>([])
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const query = useEvents({
     q: appliedQ,
     status: status ? (status as EventStatus) : undefined,
     page,
     limit: 12,
   })
+  const hasMore = query.data?.meta.hasMore ?? false
+
+  useEffect(() => {
+    if (!query.data) return
+    const pageItems = query.data.data
+    setItems((prev) =>
+      page === 1
+        ? pageItems
+        : [...prev, ...pageItems.filter((e) => !prev.some((p) => p.id === e.id))],
+    )
+  }, [query.data, page])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !query.isFetching) {
+          setPage((p) => p + 1)
+        }
+      },
+      { rootMargin: '400px' },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, query.isFetching])
 
   return (
     <div className="space-y-4">
@@ -69,6 +97,7 @@ function EventsPage() {
         onSubmit={(e) => {
           e.preventDefault()
           setAppliedQ(q)
+          setItems([])
           setPage(1)
         }}
       >
@@ -89,6 +118,7 @@ function EventsPage() {
           value={status === '' ? 'all' : status}
           onValueChange={(v) => {
             setStatus(v === 'all' ? '' : v)
+            setItems([])
             setPage(1)
           }}
         >
@@ -110,36 +140,24 @@ function EventsPage() {
         <ListSkeleton rows={4} />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
-      ) : query.data.data.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState title="No events found" description="Try a different search or filter." />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {query.data.data.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      )}
-
-      {query.data?.meta && (query.data.meta.nextCursor || query.data.meta.page !== undefined) && (
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">Page {page}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!query.data.meta.hasMore}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {items.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+          <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+          {query.isFetching ? (
+            <ListSkeleton rows={2} />
+          ) : !hasMore ? (
+            <p className="text-center text-sm text-muted-foreground">
+              You&apos;ve reached the end.
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   )

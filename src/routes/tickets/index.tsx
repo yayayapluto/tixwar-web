@@ -3,13 +3,13 @@ import { QrCode } from 'lucide-react'
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/status'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { requireAuth } from '@/features/auth/route-guard'
+import { requireCustomer } from '@/features/auth/route-guard'
 import { type Ticket, useTickets } from '@/features/tickets/queries'
 import { formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/tickets/')({
   beforeLoad: ({ location }) => {
-    requireAuth(location.href)
+    requireCustomer(location.href)
   },
   component: TicketsPage,
 })

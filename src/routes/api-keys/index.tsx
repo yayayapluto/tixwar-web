@@ -13,12 +13,12 @@ import {
   useCreateApiKey,
   useRevokeApiKey,
 } from '@/features/api-keys/queries'
-import { requireAuth } from '@/features/auth/route-guard'
+import { requireAdmin } from '@/features/auth/route-guard'
 import { formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/api-keys/')({
-  beforeLoad: ({ location }) => {
-    requireAuth(location.href)
+  beforeLoad: () => {
+    requireAdmin()
   },
   component: ApiKeysPage,
 })

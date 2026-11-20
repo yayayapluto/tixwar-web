@@ -4,14 +4,14 @@ import { CopyButton } from '@/components/copy-button'
 import { ErrorState, ListSkeleton } from '@/components/status'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { requireAuth } from '@/features/auth/route-guard'
+import { requireCustomer } from '@/features/auth/route-guard'
 import { useSession } from '@/features/auth/use-auth'
 import { useTicket } from '@/features/tickets/queries'
 import { formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/tickets/$ticketId')({
   beforeLoad: ({ location }) => {
-    requireAuth(location.href)
+    requireCustomer(location.href)
   },
   component: TicketDetailPage,
 })

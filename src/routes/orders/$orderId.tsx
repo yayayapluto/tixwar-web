@@ -3,7 +3,7 @@ import { ErrorState, ListSkeleton } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { requireAuth } from '@/features/auth/route-guard'
+import { requireCustomer } from '@/features/auth/route-guard'
 import { useCancelOrder, useOrder } from '@/features/orders/queries'
 import { usePayOrder } from '@/features/payments/queries'
 import { useOrderStream } from '@/features/realtime/use-order-stream'
@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/utils'
 
 export const Route = createFileRoute('/orders/$orderId')({
   beforeLoad: ({ location }) => {
-    requireAuth(location.href)
+    requireCustomer(location.href)
   },
   component: OrderDetailPage,
 })

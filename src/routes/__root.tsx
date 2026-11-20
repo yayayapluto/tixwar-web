@@ -22,13 +22,14 @@ type NavItem = {
 
 function BottomBar() {
   const session = useSession()
+  const isAdmin = session?.user.role === 'admin'
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const items: Array<NavItem> = [
     { to: '/events', label: 'Events', icon: CalendarDays, show: true },
-    { to: '/orders', label: 'Orders', icon: Receipt, show: Boolean(session) },
-    { to: '/tickets', label: 'Tickets', icon: Ticket, show: Boolean(session) },
-    { to: '/api-keys', label: 'API keys', icon: KeyRound, show: Boolean(session) },
-    { to: '/debug/stream', label: 'Debug', icon: Bug, show: session?.user.role === 'admin' },
+    { to: '/orders', label: 'Orders', icon: Receipt, show: Boolean(session) && !isAdmin },
+    { to: '/tickets', label: 'Tickets', icon: Ticket, show: Boolean(session) && !isAdmin },
+    { to: '/api-keys', label: 'API keys', icon: KeyRound, show: isAdmin },
+    { to: '/debug/stream', label: 'Debug', icon: Bug, show: isAdmin },
   ]
 
   return (

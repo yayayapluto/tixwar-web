@@ -53,14 +53,18 @@ Path aliases: `@/*` → `src/*`, `@api-types` → `docs/api-types`.
 
 ## Routes and access
 
-| Route                                                                        | Guard          |
-| ---------------------------------------------------------------------------- | -------------- |
-| `/`, `/events`, `/events/$eventId`, `/login`, `/register`                    | public         |
-| `/orders`, `/orders/$orderId`, `/tickets`, `/tickets/$ticketId`, `/api-keys` | `requireAuth`  |
-| `/debug/stream`                                                              | `requireAdmin` |
+| Route                                                           | Guard                                                                     |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/`, `/events`, `/events/$eventId`, `/login`, `/register`       | public                                                                    |
+| `/orders`, `/orders/$orderId`, `/tickets`, `/tickets/$ticketId` | `requireCustomer` (any logged-in user except admin; admins are view-only) |
+| `/api-keys`                                                     | `requireAdmin`                                                            |
+| `/debug/stream`                                                 | `requireAdmin`                                                            |
 
 `requireAuth` redirects to `/login?redirect=<href>`; `requireAdmin` also requires
-`session.user.role === 'admin'`. Guards live in `src/features/auth/route-guard.ts`.
+`session.user.role === 'admin'`; `requireCustomer` requires a logged-in non-admin
+session and redirects admins to `/`. Guards live in `src/features/auth/route-guard.ts`.
+Admins are view-only: no Orders/Tickets menu or routes, and no Buy button on event
+detail (they keep Events, API keys and Debug).
 
 ## Rules
 

@@ -10,14 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { requireAuth } from '@/features/auth/route-guard'
+import { requireCustomer } from '@/features/auth/route-guard'
 import { type Order, type OrderStatus, useOrders } from '@/features/orders/queries'
 import { ORDER_STATUS_VARIANT } from '@/lib/status'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/orders/')({
   beforeLoad: ({ location }) => {
-    requireAuth(location.href)
+    requireCustomer(location.href)
   },
   component: OrdersPage,
 })

@@ -77,51 +77,51 @@ function TierCard({
           <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
             Log in to buy
           </Link>
-        ) : (
+        ) : session.user.role === 'admin' ? (
           <>
-            <div className="flex gap-2">
-              <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
-                <SelectTrigger aria-label="Quantity" className="w-24">
-                  <SelectValue placeholder="Qty" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map(
-                    (n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-              <Button
-                className="flex-1"
-                disabled={!saleOpen || createOrder.isPending}
-                onClick={() =>
-                  createOrder.mutate(
-                    { tierId: tier.id, quantity },
-                    {
-                      onSuccess: (order) =>
-                        navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
-                    },
-                  )
-                }
-              >
-                {createOrder.isPending ? 'Reserving…' : saleOpen ? 'Buy' : 'Not on sale'}
-              </Button>
-            </div>
-            {session?.user.role === 'admin' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => onLoadTest?.(tier.id)}
-              >
-                <Zap className="size-4" aria-hidden="true" />
-                Load test this tier
-              </Button>
-            )}
+            <p className="text-sm text-muted-foreground">
+              Admins are view-only — buying is disabled for admin accounts.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => onLoadTest?.(tier.id)}
+            >
+              <Zap className="size-4" aria-hidden="true" />
+              Load test this tier
+            </Button>
           </>
+        ) : (
+          <div className="flex gap-2">
+            <Select value={String(quantity)} onValueChange={(v) => setQuantity(Number(v))}>
+              <SelectTrigger aria-label="Quantity" className="w-24">
+                <SelectValue placeholder="Qty" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: Math.min(tier.maxPerUser, 10) }, (_, i) => i + 1).map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              className="flex-1"
+              disabled={!saleOpen || createOrder.isPending}
+              onClick={() =>
+                createOrder.mutate(
+                  { tierId: tier.id, quantity },
+                  {
+                    onSuccess: (order) =>
+                      navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
+                  },
+                )
+              }
+            >
+              {createOrder.isPending ? 'Reserving…' : saleOpen ? 'Buy' : 'Not on sale'}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
