@@ -339,10 +339,9 @@ export function ApiKeysListSkeleton({ count = 3 }: { count?: number }) {
   )
 }
 
-export function ApiKeysPageSkeleton() {
+export function ApiKeysManagerSkeleton() {
   return (
-    <SkeletonShell>
-      <Skeleton className="h-8 w-32" />
+    <div className="space-y-4">
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <Skeleton className="h-4 w-48" />
@@ -374,6 +373,38 @@ export function ApiKeysPageSkeleton() {
         </CardContent>
       </Card>
       <ApiKeyRows count={3} />
+    </div>
+  )
+}
+
+export function ApiKeysPageSkeleton() {
+  return (
+    <SkeletonShell>
+      <Skeleton className="h-8 w-32" />
+      <ApiKeysManagerSkeleton />
+    </SkeletonShell>
+  )
+}
+
+export function SettingsPageSkeleton() {
+  return (
+    <SkeletonShell>
+      <Skeleton className="h-8 w-32" />
+      <Card>
+        <CardContent className="space-y-2 pt-6">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        </CardContent>
+      </Card>
+      <Skeleton className="h-6 w-28" />
+      <Skeleton className="h-4 w-2/3" />
+      <ApiKeysManagerSkeleton />
     </SkeletonShell>
   )
 }

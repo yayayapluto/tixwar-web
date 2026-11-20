@@ -20,6 +20,7 @@ import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as EventsEventIdRouteImport } from './routes/events/$eventId'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as TicketsIndexRouteImport } from './routes/tickets/index'
 import { Route as TicketsTicketIdRouteImport } from './routes/tickets/$ticketId'
 
@@ -78,6 +79,11 @@ const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TicketsIndexRoute = TicketsIndexRouteImport.update({
   id: '/tickets/',
   path: '/tickets/',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/api-keys/': typeof ApiKeysIndexRoute
   '/events/': typeof EventsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/tickets/': typeof TicketsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/api-keys': typeof ApiKeysIndexRoute
   '/events': typeof EventsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/tickets': typeof TicketsIndexRoute
 }
 export interface FileRoutesById {
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/api-keys/': typeof ApiKeysIndexRoute
   '/events/': typeof EventsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/tickets/': typeof TicketsIndexRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/api-keys/'
     | '/events/'
     | '/orders/'
+    | '/settings/'
     | '/tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/api-keys'
     | '/events'
     | '/orders'
+    | '/settings'
     | '/tickets'
   id:
     | '__root__'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/api-keys/'
     | '/events/'
     | '/orders/'
+    | '/settings/'
     | '/tickets/'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,7 @@ export interface RootRouteChildren {
   ApiKeysIndexRoute: typeof ApiKeysIndexRoute
   EventsIndexRoute: typeof EventsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   TicketsIndexRoute: typeof TicketsIndexRoute
 }
 
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tickets/': {
       id: '/tickets/'
       path: '/tickets'
@@ -308,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeysIndexRoute: ApiKeysIndexRoute,
   EventsIndexRoute: EventsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   TicketsIndexRoute: TicketsIndexRoute,
 }
 export const routeTree = rootRouteImport

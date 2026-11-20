@@ -57,7 +57,8 @@ Path aliases: `@/*` → `src/*`, `@api-types` → `docs/api-types`.
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/`, `/events`, `/events/$eventId`, `/login`, `/register`       | public                                                                    |
 | `/orders`, `/orders/$orderId`, `/tickets`, `/tickets/$ticketId` | `requireCustomer` (any logged-in user except admin; admins are view-only) |
-| `/api-keys`                                                     | `requireAdmin`                                                            |
+| `/api-keys`                                                     | `requireAuth` (any logged-in user; the API scopes keys per owner)         |
+| `/settings`                                                     | `requireAuth`                                                             |
 | `/debug/stream`                                                 | `requireAdmin`                                                            |
 
 `requireAuth` redirects to `/login?redirect=<href>`; `requireAdmin` also requires

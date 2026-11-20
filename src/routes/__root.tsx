@@ -1,7 +1,17 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
-import { Bug, CalendarDays, KeyRound, LogOut, Moon, Receipt, Sun, Ticket } from 'lucide-react'
+import {
+  Bug,
+  CalendarDays,
+  KeyRound,
+  LogOut,
+  Moon,
+  Receipt,
+  Settings,
+  Sun,
+  Ticket,
+} from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Toaster } from '@/components/toaster'
 import {
@@ -26,7 +36,7 @@ export const Route = createRootRoute({
 })
 
 type NavItem = {
-  to: '/events' | '/orders' | '/tickets' | '/api-keys' | '/debug/stream'
+  to: '/events' | '/orders' | '/tickets' | '/settings' | '/api-keys' | '/debug/stream'
   label: string
   icon: LucideIcon
   show: boolean
@@ -39,6 +49,7 @@ function useVisibleNavItems(): Array<NavItem> {
     { to: '/events', label: 'Events', icon: CalendarDays, show: true },
     { to: '/orders', label: 'Orders', icon: Receipt, show: Boolean(session) && !isAdmin },
     { to: '/tickets', label: 'Tickets', icon: Ticket, show: Boolean(session) && !isAdmin },
+    { to: '/settings', label: 'Settings', icon: Settings, show: Boolean(session) && !isAdmin },
     { to: '/api-keys', label: 'API keys', icon: KeyRound, show: isAdmin },
     { to: '/debug/stream', label: 'Debug', icon: Bug, show: isAdmin },
   ]
