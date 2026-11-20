@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Toggle } from '@/components/ui/toggle'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { getV1Events } from '@/lib/client'
 import { STATUS_LABEL } from '@/lib/status'
@@ -384,28 +385,28 @@ function EventsPage() {
       {knownCategories.length > 0 && (
         <fieldset className="flex flex-wrap gap-2">
           <legend className="sr-only">Filter by category</legend>
-          <Button
-            type="button"
+          <Toggle
             size="sm"
-            variant={category === '' ? 'default' : 'outline'}
-            aria-pressed={category === ''}
-            onClick={() => toggleCategory('')}
-            className="rounded-full"
+            variant="outline"
+            pressed={category === ''}
+            onPressedChange={() => toggleCategory('')}
+            aria-label="Show all categories"
+            className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
           >
             All
-          </Button>
+          </Toggle>
           {shownCategories.map((c) => (
-            <Button
+            <Toggle
               key={c}
-              type="button"
               size="sm"
-              variant={category === c ? 'default' : 'outline'}
-              aria-pressed={category === c}
-              onClick={() => toggleCategory(c)}
-              className="rounded-full"
+              variant="outline"
+              pressed={category === c}
+              onPressedChange={() => toggleCategory(c)}
+              aria-label={`Filter by ${titleCase(c)}`}
+              className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
             >
               {titleCase(c)}
-            </Button>
+            </Toggle>
           ))}
           {knownCategories.length > VISIBLE_CHIP_COUNT && (
             <Button

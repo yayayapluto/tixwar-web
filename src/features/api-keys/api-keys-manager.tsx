@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -130,64 +131,63 @@ export function ApiKeysManager() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>What are API keys for?</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExplainerOpen(!showExplainer)}
-            aria-expanded={showExplainer}
-          >
-            {showExplainer ? 'Hide explanation' : 'Show explanation'}
-            {showExplainer ? (
-              <ChevronUp className="size-4" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="size-4" aria-hidden="true" />
-            )}
-          </Button>
-        </CardHeader>
-        {showExplainer && (
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              API keys let external apps, services, or scripts call the TixWar API without a user
-              login. Send the key as the{' '}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">X-API-Key</code>{' '}
-              header on every request.
-            </p>
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium">Base URL</p>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
-                  {API_BASE_URL}
-                </code>
-                <CopyButton
-                  value={API_BASE_URL}
-                  label="Base URL"
-                  onCopied={() => toast('Base URL copied', { variant: 'success' })}
-                />
+      <Collapsible open={showExplainer} onOpenChange={(open) => setExplainerOpen(open)}>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle>What are API keys for?</CardTitle>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                {showExplainer ? 'Hide explanation' : 'Show explanation'}
+                {showExplainer ? (
+                  <ChevronUp className="size-4" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                API keys let external apps, services, or scripts call the TixWar API without a user
+                login. Send the key as the{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">X-API-Key</code>{' '}
+                header on every request.
+              </p>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Base URL</p>
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                    {API_BASE_URL}
+                  </code>
+                  <CopyButton
+                    value={API_BASE_URL}
+                    label="Base URL"
+                    onCopied={() => toast('Base URL copied', { variant: 'success' })}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium">Example</p>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
-                  {exampleCurl}
-                </code>
-                <CopyButton
-                  value={exampleCurl}
-                  label="Example request"
-                  onCopied={() => toast('Example copied', { variant: 'success' })}
-                />
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Example</p>
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                    {exampleCurl}
+                  </code>
+                  <CopyButton
+                    value={exampleCurl}
+                    label="Example request"
+                    onCopied={() => toast('Example copied', { variant: 'success' })}
+                  />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              A key is shown only once when created, so store it safely. Revoking a key stops every
-              integration using it, and can&apos;t be undone.
-            </p>
-          </CardContent>
-        )}
-      </Card>
+              <p className="text-sm text-muted-foreground">
+                A key is shown only once when created, so store it safely. Revoking a key stops
+                every integration using it, and can&apos;t be undone.
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <Card>
         <CardHeader>
