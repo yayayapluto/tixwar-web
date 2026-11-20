@@ -123,6 +123,8 @@ function EventsPage() {
           </p>
         )}
       </div>
+      {/* Search applies on submit (server-side, one request per search);
+          the status select applies immediately, like a filter. */}
       <form
         className="flex flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
@@ -140,8 +142,8 @@ function EventsPage() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search events"
-            aria-label="Search events"
+            placeholder="Search by event name"
+            aria-label="Search by event name"
             className="pl-8"
           />
         </div>
@@ -165,6 +167,11 @@ function EventsPage() {
           </SelectContent>
         </Select>
         <Button type="submit">Search</Button>
+        {filtered && (
+          <Button type="button" variant="outline" onClick={clearFilters}>
+            Clear filters
+          </Button>
+        )}
       </form>
 
       {query.isPending ? (
@@ -179,12 +186,15 @@ function EventsPage() {
             hideIcon
             action={
               <Button variant="outline" size="sm" onClick={clearFilters}>
-                Clear search
+                Clear filters
               </Button>
             }
           />
         ) : (
-          <EmptyState title="No events found" description="Try a different search or filter." />
+          <EmptyState
+            title="No events yet"
+            description="There are no events listed right now. Check back later."
+          />
         )
       ) : (
         <>
