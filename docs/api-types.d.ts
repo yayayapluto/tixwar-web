@@ -162,6 +162,20 @@ export interface components {
           "maxPerUser": number;
         }>;
     };
+    "EventListItem": {
+      "id": string;
+      "name": string;
+      "description": string;
+      "category": string;
+      "city": string;
+      "venue": string;
+      "startsAt": string;
+      "status": "DRAFT" | "SCHEDULED" | "ON_SALE" | "SOLD_OUT" | "ENDED";
+      "createdAt": string;
+      "updatedAt": string;
+      "minPrice": number | null;
+      "maxPrice": number | null;
+    };
     "TicketTier": {
       "id": string;
       "eventId": string;
@@ -411,7 +425,7 @@ export interface paths {
     get: {
       responses: {
         "200": {
-          "data": Array<components["schemas"]["Event"]>;
+          "data": Array<components["schemas"]["EventListItem"]>;
           "meta": components["schemas"]["Meta"];
           "links": components["schemas"]["Links"];
         };

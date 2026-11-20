@@ -13,15 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { type Event, type EventStatus, useEvents } from '@/features/events/queries'
+import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 export const Route = createFileRoute('/events/')({
   component: EventsPage,
 })
 
-function EventCard({ event, index }: { event: Event; index: number }) {
+function EventCard({ event, index }: { event: EventListItem; index: number }) {
   return (
     <Link
       to="/events/$eventId"
@@ -50,6 +50,11 @@ function EventCard({ event, index }: { event: Event; index: number }) {
           </p>
           <p>{event.venue}</p>
           <p>{formatDate(event.startsAt)}</p>
+          {event.minPrice != null && (
+            <p className="pt-1 text-base font-semibold tabular-nums text-foreground">
+              From {formatCurrency(event.minPrice)}
+            </p>
+          )}
         </CardContent>
       </Card>
     </Link>
@@ -61,7 +66,7 @@ function EventsPage() {
   const [appliedQ, setAppliedQ] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
-  const [items, setItems] = useState<Array<Event>>([])
+  const [items, setItems] = useState<Array<EventListItem>>([])
   const sentinelRef = useRef<HTMLDivElement>(null)
   const query = useEvents({
     q: appliedQ,

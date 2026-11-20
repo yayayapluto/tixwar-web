@@ -185,6 +185,21 @@ export type EventDetail = {
     }>;
 };
 
+export type EventListItem = {
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    city: string;
+    venue: string;
+    startsAt: string;
+    status: 'DRAFT' | 'SCHEDULED' | 'ON_SALE' | 'SOLD_OUT' | 'ENDED';
+    createdAt: string;
+    updatedAt: string;
+    minPrice: number | null;
+    maxPrice: number | null;
+};
+
 export type TicketTier = {
     id: string;
     eventId: string;
@@ -640,7 +655,7 @@ export type GetV1EventsResponses = {
      * Event list
      */
     200: {
-        data: Array<Event>;
+        data: Array<EventListItem>;
         meta: Meta;
         links: Links;
     };

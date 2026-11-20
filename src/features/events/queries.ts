@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getV1Events, getV1EventsById, getV1EventsByIdStats } from '@/lib/client'
 
 export type Event = components['schemas']['Event']
+export type EventListItem = components['schemas']['EventListItem']
 export type EventDetail = components['schemas']['EventDetail']
 export type TicketTier = components['schemas']['TicketTier']
 export type EventStatus = Event['status']
