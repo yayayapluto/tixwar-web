@@ -1,6 +1,7 @@
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/lib/toast'
 
 export function CopyButton({
   value,
@@ -22,7 +23,15 @@ export function CopyButton({
   }, [copied])
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(value)
+    try {
+      // Clipboard can reject (permission denied, non-secure context):
+      // only report success when the copy really happened, otherwise the
+      // Check icon would lie about a code the user never got.
+      await navigator.clipboard.writeText(value)
+    } catch {
+      toast(`Gagal menyalin ${label}. Coba lagi.`, { variant: 'error' })
+      return
+    }
     setCopied(true)
     onCopied?.()
   }
