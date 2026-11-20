@@ -21,13 +21,21 @@ export const Route = createFileRoute('/events/')({
   component: EventsPage,
 })
 
-function EventCard({ event, index }: { event: EventListItem; index: number }) {
+// Display-only title case for raw API values ("music" -> "Music");
+// the raw value is still what gets sent to the API.
+function titleCase(value: string) {
+  return value
+    .split(' ')
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(' ')
+}
+
+function EventCard({ event }: { event: EventListItem }) {
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
       className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
       <Card
         className={cn(
@@ -46,7 +54,7 @@ function EventCard({ event, index }: { event: EventListItem; index: number }) {
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
           <p>
-            {event.category} · {event.city}
+            {titleCase(event.category)} · {titleCase(event.city)}
           </p>
           <p>{event.venue}</p>
           <p>{formatDate(event.startsAt)}</p>
@@ -65,12 +73,15 @@ function EventsPage() {
   const [q, setQ] = useState('')
   const [appliedQ, setAppliedQ] = useState('')
   const [status, setStatus] = useState('')
+  const [category, setCategory] = useState('')
+  const [knownCategories, setKnownCategories] = useState<Array<string>>([])
   const [page, setPage] = useState(1)
   const [items, setItems] = useState<Array<EventListItem>>([])
   const sentinelRef = useRef<HTMLDivElement>(null)
   const query = useEvents({
     q: appliedQ,
     status: status ? (status as EventStatus) : undefined,
+    category: category ? category : undefined,
     page,
     limit: 12,
   })
@@ -79,6 +90,18 @@ function EventsPage() {
   useEffect(() => {
     if (!query.data) return
     const pageItems = query.data.data
+    // Category chips come from loaded items only, never hardcoded. While a
+    // category filter is active every loaded item has that one category, so
+    // the known set is only grown from unfiltered-category loads — union
+    // only, so switching categories never needs a clear first.
+    if (category === '') {
+      const fresh = [...new Set(pageItems.map((e) => e.category))]
+      if (fresh.length > 0) {
+        setKnownCategories((prev) =>
+          [...new Set([...prev, ...fresh])].sort((a, b) => a.localeCompare(b)),
+        )
+      }
+    }
     // The list grows without a cap; fine for the current catalog size,
     // revisit windowing once it passes ~100 items.
     setItems((prev) =>
@@ -86,7 +109,7 @@ function EventsPage() {
         ? pageItems
         : [...prev, ...pageItems.filter((e) => !prev.some((p) => p.id === e.id))],
     )
-  }, [query.data, page])
+  }, [query.data, page, category])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -103,14 +126,26 @@ function EventsPage() {
     return () => observer.disconnect()
   }, [hasMore, query.isFetching])
 
-  const filtered = appliedQ !== '' || status !== ''
+  const filtered = appliedQ !== '' || status !== '' || category !== ''
   const clearFilters = () => {
     setQ('')
     setAppliedQ('')
     setStatus('')
+    setCategory('')
     setItems([])
     setPage(1)
   }
+  const toggleCategory = (value: string) => {
+    setCategory((prev) => (prev === value ? '' : value))
+    setItems([])
+    setPage(1)
+  }
+  const emptyFilterLabel =
+    appliedQ !== ''
+      ? appliedQ
+      : category !== ''
+        ? titleCase(category)
+        : (STATUS_LABEL[status] ?? status)
 
   return (
     <div className="space-y-4">
@@ -174,6 +209,35 @@ function EventsPage() {
         )}
       </form>
 
+      {knownCategories.length > 0 && (
+        <fieldset className="flex flex-wrap gap-2">
+          <legend className="sr-only">Filter by category</legend>
+          <Button
+            type="button"
+            size="sm"
+            variant={category === '' ? 'default' : 'outline'}
+            aria-pressed={category === ''}
+            onClick={() => toggleCategory('')}
+            className="rounded-full"
+          >
+            All
+          </Button>
+          {knownCategories.map((c) => (
+            <Button
+              key={c}
+              type="button"
+              size="sm"
+              variant={category === c ? 'default' : 'outline'}
+              aria-pressed={category === c}
+              onClick={() => toggleCategory(c)}
+              className="rounded-full"
+            >
+              {titleCase(c)}
+            </Button>
+          ))}
+        </fieldset>
+      )}
+
       {query.isPending ? (
         <ListSkeleton rows={4} />
       ) : query.isError ? (
@@ -181,7 +245,7 @@ function EventsPage() {
       ) : items.length === 0 ? (
         filtered ? (
           <EmptyState
-            title={`No events match "${appliedQ !== '' ? appliedQ : (STATUS_LABEL[status] ?? status)}".`}
+            title={`No events match "${emptyFilterLabel}".`}
             description="Try a different search or filter."
             hideIcon
             action={
@@ -199,8 +263,8 @@ function EventsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
-            {items.map((event, i) => (
-              <EventCard key={event.id} event={event} index={i} />
+            {items.map((event) => (
+              <EventCard key={event.id} event={event} />
             ))}
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-1" />
