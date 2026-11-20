@@ -21,10 +21,9 @@ type NavItem = {
   show: boolean
 }
 
-function BottomBar() {
+function useVisibleNavItems(): Array<NavItem> {
   const session = useSession()
   const isAdmin = session?.user.role === 'admin'
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const items: Array<NavItem> = [
     { to: '/events', label: 'Events', icon: CalendarDays, show: true },
     { to: '/orders', label: 'Orders', icon: Receipt, show: Boolean(session) && !isAdmin },
@@ -32,7 +31,12 @@ function BottomBar() {
     { to: '/api-keys', label: 'API keys', icon: KeyRound, show: isAdmin },
     { to: '/debug/stream', label: 'Debug', icon: Bug, show: isAdmin },
   ]
-  const visible = items.filter((item) => item.show)
+  return items.filter((item) => item.show)
+}
+
+function BottomBar() {
+  const visible = useVisibleNavItems()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const activeTo = visible.find(
     (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
   )?.to
@@ -49,6 +53,10 @@ function BottomBar() {
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [activeTo])
+
+  // A single nav item is not navigation: the header already links to Events,
+  // so a one-item pill would only take up space.
+  if (visible.length <= 1) return null
 
   return (
     <nav
@@ -75,6 +83,7 @@ function BottomBar() {
               else itemRefs.current.delete(item.to)
             }}
             aria-current={active ? 'page' : undefined}
+            aria-label={item.label}
             className={cn(
               'relative z-10 flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,color] duration-150 ease-out active:scale-[0.98]',
               active ? 'text-secondary-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -150,12 +159,19 @@ function Header() {
 }
 
 function RootComponent() {
+  // Same rule as BottomBar: reserve bottom space only when the bar renders.
+  const showBottomBar = useVisibleNavItems().length > 1
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <div className="flex min-h-dvh flex-col">
           <Header />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-24">
+          <main
+            className={cn(
+              'mx-auto w-full max-w-5xl flex-1 px-4 pt-6',
+              showBottomBar ? 'pb-24' : 'pb-6',
+            )}
+          >
             <Outlet />
           </main>
           <BottomBar />
