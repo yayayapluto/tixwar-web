@@ -1,7 +1,7 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PageSpinner } from '@/components/status'
+import { ListSkeleton } from '@/components/status'
 import { routeTree } from './routeTree.gen'
 import '@/lib/api'
 import './index.css'
@@ -9,7 +9,7 @@ import './index.css'
 const router = createRouter({
   routeTree,
   defaultPendingMs: 0,
-  defaultPendingComponent: PageSpinner,
+  defaultPendingComponent: ListSkeleton,
 })
 
 declare module '@tanstack/react-router' {

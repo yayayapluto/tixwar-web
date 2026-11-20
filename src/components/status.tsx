@@ -1,19 +1,7 @@
-import { AlertTriangle, Inbox, LoaderCircle } from 'lucide-react'
+import { AlertTriangle, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/errors'
-
-export function PageSpinner() {
-  return (
-    <div
-      role="status"
-      aria-label="Loading"
-      className="flex min-h-[50dvh] items-center justify-center"
-    >
-      <LoaderCircle className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
-    </div>
-  )
-}
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const message = error instanceof ApiError ? error.detail : 'Something went wrong.'
