@@ -21,12 +21,13 @@ export const Route = createFileRoute('/events/')({
   component: EventsPage,
 })
 
-function EventCard({ event }: { event: Event }) {
+function EventCard({ event, index }: { event: Event; index: number }) {
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
-      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
       <Card
         className={cn(
@@ -183,8 +184,8 @@ function EventsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
-            {items.map((event) => (
-              <EventCard key={event.id} event={event} />
+            {items.map((event, i) => (
+              <EventCard key={event.id} event={event} index={i} />
             ))}
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-1" />

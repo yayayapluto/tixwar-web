@@ -163,7 +163,10 @@ function DebugPage() {
               </p>
             ) : (
               traces.map((t) => (
-                <pre key={t.id} className="overflow-x-auto rounded bg-muted p-2 text-xs">
+                <pre
+                  key={t.id}
+                  className="animate-in overflow-x-auto rounded bg-muted p-2 text-xs duration-200 ease-out fade-in slide-in-from-top-1"
+                >
                   {t.raw}
                 </pre>
               ))

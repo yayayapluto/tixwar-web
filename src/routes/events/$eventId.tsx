@@ -37,10 +37,12 @@ export const Route = createFileRoute('/events/$eventId')({
 function TierCard({
   tier,
   cheapest,
+  index,
   onLoadTest,
 }: {
   tier: TicketTier
   cheapest?: boolean
+  index: number
   onLoadTest?: (tierId: string) => void
 }) {
   const session = useSession()
@@ -56,7 +58,10 @@ function TierCard({
   const lowStock = tier.quota > 0 && tier.quota <= 10
 
   return (
-    <Card className={cn(cheapest && 'border-primary')}>
+    <Card
+      className={cn('animate-fade-up', cheapest && 'border-primary')}
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
@@ -213,11 +218,12 @@ function EventDetailPage() {
       <h2 className="text-lg font-semibold">Tickets</h2>
       {detail.tiers && detail.tiers.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {detail.tiers.map((tier) => (
+          {detail.tiers.map((tier, i) => (
             <TierCard
               key={tier.id}
               tier={tier}
               cheapest={tier.id === cheapestTierId}
+              index={i}
               onLoadTest={(tierId) => setLoadDrawer({ open: true, tierId })}
             />
           ))}

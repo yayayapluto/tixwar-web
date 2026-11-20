@@ -14,9 +14,12 @@ export const Route = createFileRoute('/tickets/')({
   component: TicketsPage,
 })
 
-function TicketCard({ ticket }: { ticket: Ticket }) {
+function TicketCard({ ticket, index }: { ticket: Ticket; index: number }) {
   return (
-    <Card>
+    <Card
+      className="animate-fade-up"
+      style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
+    >
       <CardHeader>
         <CardTitle className="min-w-0 truncate font-mono text-sm">{ticket.code}</CardTitle>
       </CardHeader>
@@ -59,8 +62,8 @@ function TicketsPage() {
         />
       ) : (
         <div className="grid gap-3">
-          {query.data.data.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} />
+          {query.data.data.map((ticket, i) => (
+            <TicketCard key={ticket.id} ticket={ticket} index={i} />
           ))}
         </div>
       )}

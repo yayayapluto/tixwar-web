@@ -11,7 +11,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       role="alert"
       className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center"
     >
-      <AlertTriangle className="size-8 text-destructive" aria-hidden="true" />
+      <AlertTriangle className="animate-shake-once size-8 text-destructive" aria-hidden="true" />
       <p className="text-sm font-medium text-destructive">{message}</p>
       {retryAfter !== undefined && (
         <p className="text-xs text-muted-foreground">Try again in {retryAfter}s</p>
@@ -37,7 +37,7 @@ export function EmptyState({
   hideIcon?: boolean
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-8 text-center">
+    <div className="animate-fade-up flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-8 text-center">
       {!hideIcon && <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />}
       <p className="text-sm font-medium">{title}</p>
       {description && <p className="text-sm text-muted-foreground">{description}</p>}

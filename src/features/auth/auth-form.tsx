@@ -63,13 +63,13 @@ export function AuthForm({
             {showPassword ? (
               <EyeOff
                 key="hide"
-                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             ) : (
               <Eye
                 key="show"
-                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             )}

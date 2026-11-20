@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 import { Bug, CalendarDays, KeyRound, LogOut, Moon, Receipt, Sun, Ticket } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Toaster } from '@/components/toaster'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useLogout, useSession } from '@/features/auth/use-auth'
@@ -31,34 +32,61 @@ function BottomBar() {
     { to: '/api-keys', label: 'API keys', icon: KeyRound, show: isAdmin },
     { to: '/debug/stream', label: 'Debug', icon: Bug, show: isAdmin },
   ]
+  const visible = items.filter((item) => item.show)
+  const activeTo = visible.find(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  )?.to
+  const navRef = useRef<HTMLElement>(null)
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>())
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = activeTo ? itemRefs.current.get(activeTo) : undefined
+      if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [activeTo])
 
   return (
     <nav
+      ref={navRef}
       aria-label="Primary"
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
+      className="animate-bar-in fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
     >
-      {items
-        .filter((item) => item.show)
-        .map((item) => {
-          const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.98]',
-                active
-                  ? 'bg-secondary text-secondary-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
-              )}
-            >
+      {pill && (
+        <span
+          aria-hidden="true"
+          className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-secondary transition-[transform,width] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          style={{ transform: `translateX(${pill.left}px)`, width: pill.width }}
+        />
+      )}
+      {visible.map((item) => {
+        const active = item.to === activeTo
+        const Icon = item.icon
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            ref={(el) => {
+              if (el) itemRefs.current.set(item.to, el)
+              else itemRefs.current.delete(item.to)
+            }}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'relative z-10 flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,color] duration-150 ease-out active:scale-[0.98]',
+              active ? 'text-secondary-foreground' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <span key={String(active)} className={active ? 'animate-pop' : undefined}>
               <Icon className="size-4" aria-hidden="true" />
-              <span className="hidden min-[400px]:inline">{item.label}</span>
-            </Link>
-          )
-        })}
+            </span>
+            <span className="hidden min-[400px]:inline">{item.label}</span>
+          </Link>
+        )
+      })}
     </nav>
   )
 }
@@ -86,13 +114,13 @@ function Header() {
             {theme === 'dark' ? (
               <Sun
                 key="sun"
-                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             ) : (
               <Moon
                 key="moon"
-                className="size-4 animate-in duration-150 ease-out fade-in zoom-in-90"
+                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             )}

@@ -23,12 +23,13 @@ export const Route = createFileRoute('/orders/')({
   component: OrdersPage,
 })
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, index }: { order: Order; index: number }) {
   return (
     <Link
       to="/orders/$orderId"
       params={{ orderId: order.id }}
-      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      style={{ animationDelay: `${Math.min(index % 12, 8) * 45}ms` }}
     >
       <Card className="transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]">
         <CardHeader>
@@ -107,8 +108,8 @@ function OrdersPage() {
         )
       ) : (
         <div className="grid gap-3">
-          {query.data.data.map((order) => (
-            <OrderCard key={order.id} order={order} />
+          {query.data.data.map((order, i) => (
+            <OrderCard key={order.id} order={order} index={i} />
           ))}
         </div>
       )}

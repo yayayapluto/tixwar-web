@@ -15,7 +15,7 @@ export function Toaster() {
           role="alert"
           aria-atomic="true"
           className={cn(
-            'pointer-events-auto flex w-full animate-in items-start gap-3 rounded-lg border bg-background p-3 shadow-lg duration-300 ease-out fade-in slide-in-from-top-2',
+            'pointer-events-auto flex w-full animate-in items-start gap-3 rounded-lg border bg-background p-3 shadow-lg duration-300 ease-out fade-in slide-in-from-top-4 zoom-in-95',
             toast.variant === 'success' ? 'border-success/40' : 'border-destructive/40',
           )}
         >
