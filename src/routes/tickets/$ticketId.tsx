@@ -74,6 +74,10 @@ function TicketDetailPage() {
   const ticketDetail = query.data?.data
   const qrExpired = qrSecondsLeft !== null && qrSecondsLeft <= 0
   const qrLowTime = qrSecondsLeft !== null && qrSecondsLeft > 0 && qrSecondsLeft < 60
+  // Refresh pre-emptively at ~30s remaining, while the <60s warning is
+  // already showing, so the displayed QR never reaches zero mid-scan.
+  // The expired box below stays as a fallback (e.g. a failed refresh).
+  const qrRefreshDue = qrSecondsLeft !== null && qrSecondsLeft <= 30
   const qrUrl = ticketDetail?.qrUrl
 
   const handleRefresh = useCallback(async () => {
@@ -88,17 +92,27 @@ function TicketDetailPage() {
     }
   }, [query.refetch])
 
-  // Auto-refresh saat QR kedaluwarsa: user yang mengantre tidak terjebak di kotak
-  // kedaluwarsa. Dijaga oleh autoRefreshedFor + isFetching supaya tidak loop.
+  // Auto-refresh saat QR hampir kedaluwarsa: user yang mengantre tidak
+  // terjebak di kotak kedaluwarsa dan QR tidak hilang di tengah pemindaian.
+  // Dijaga oleh autoRefreshedFor + isFetching supaya tidak loop.
   useEffect(() => {
-    if (!qrExpired || qrUrl === undefined || query.isFetching) return
+    if (!qrRefreshDue || qrUrl === undefined || query.isFetching) return
     if (autoRefreshedFor.current === qrUrl) return
     autoRefreshedFor.current = qrUrl
     void handleRefresh()
-  }, [qrExpired, qrUrl, query.isFetching, handleRefresh])
+  }, [qrRefreshDue, qrUrl, query.isFetching, handleRefresh])
 
   if (query.isPending) return <TicketDetailSkeleton />
-  if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />
+  if (query.isError)
+    return (
+      <ErrorState
+        error={query.error}
+        onRetry={() => query.refetch()}
+        fallbackTitle="Terjadi kesalahan."
+        retryLabel="Coba lagi"
+        formatRetryAfter={(seconds) => `Coba lagi dalam ${seconds} detik`}
+      />
+    )
 
   const detail = query.data.data
   const ticket = detail.ticket
@@ -141,12 +155,27 @@ function TicketDetailPage() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="min-w-0 truncate font-mono text-sm">{ticket.code}</CardTitle>
+          {/*
+            No truncate: the code is the only fallback when the QR won't
+            scan, so it wraps (break-all) instead of clipping. leading-snug
+            overrides the primitive's leading-none via twMerge, so wrapped
+            lines and descenders stay readable. title shows the full code
+            on hover.
+          */}
+          <CardTitle
+            title={ticket.code}
+            className="min-w-0 break-all font-mono text-sm leading-snug"
+          >
+            {ticket.code}
+          </CardTitle>
           <div className="flex shrink-0 items-center gap-1">
             <Badge variant="success">Tiket valid</Badge>
             <CopyButton
               value={ticket.code}
               label="Kode tiket"
+              copyLabel="Salin kode tiket"
+              copiedLabel="Kode tiket disalin"
+              textLabel="Salin kode"
               onCopied={() => toast('Kode tiket disalin', { variant: 'success' })}
             />
           </div>
@@ -191,7 +220,7 @@ function TicketDetailPage() {
             {qrExpired || qrError ? (
               <div
                 role="alert"
-                className="flex h-full items-center justify-center rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
+                className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
               >
                 <p className="text-sm font-medium text-destructive">
                   {refetchError
@@ -200,13 +229,16 @@ function TicketDetailPage() {
                       ? 'Link QR kedaluwarsa — tiketmu tetap valid. Refresh untuk QR baru.'
                       : 'QR gagal dimuat. Refresh untuk QR baru.'}
                 </p>
+                <p className="text-sm text-destructive/80">
+                  Kalau QR tidak terbaca, tunjukkan kode tiket di atas ke petugas.
+                </p>
               </div>
             ) : (
               <div className="flex h-full justify-center rounded-lg border bg-white p-4">
                 {/* White background is required for QR scannability */}
                 <img
                   src={detail.qrUrl}
-                  alt={`QR code for ticket ${ticket.code}`}
+                  alt={`Kode QR untuk tiket ${ticket.code}`}
                   width={224}
                   height={224}
                   className="size-56 object-contain"
@@ -262,6 +294,9 @@ function TicketDetailPage() {
                 </p>
               </div>
               <p className="text-center text-sm">Tunjukkan QR ini di pintu masuk.</p>
+              <p className="text-center text-sm text-muted-foreground">
+                Kalau QR tidak terbaca, tunjukkan kode tiket di atas ke petugas.
+              </p>
               <Button className="w-full" onClick={handleDownload}>
                 <Download className="size-4" aria-hidden="true" />
                 Download QR

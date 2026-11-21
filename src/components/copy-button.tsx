@@ -8,11 +8,20 @@ export function CopyButton({
   label,
   className,
   onCopied,
+  copyLabel,
+  copiedLabel,
+  textLabel,
 }: {
   value: string
   label: string
   className?: string
   onCopied?: () => void
+  /** aria-label before copying; English default, pass Indonesian per page. */
+  copyLabel?: string
+  /** aria-label after copying; English default, pass Indonesian per page. */
+  copiedLabel?: string
+  /** Visible text next to the icon, e.g. "Salin kode". Omit for icon-only. */
+  textLabel?: string
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -39,9 +48,9 @@ export function CopyButton({
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size={textLabel ? 'sm' : 'icon'}
       onClick={handleCopy}
-      aria-label={copied ? `${label} copied` : `Copy ${label}`}
+      aria-label={copied ? (copiedLabel ?? `${label} copied`) : (copyLabel ?? `Copy ${label}`)}
       className={className}
     >
       {copied ? (
@@ -57,6 +66,7 @@ export function CopyButton({
           aria-hidden="true"
         />
       )}
+      {textLabel}
     </Button>
   )
 }

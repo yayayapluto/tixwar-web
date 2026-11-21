@@ -3,8 +3,23 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/errors'
 
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const message = error instanceof ApiError ? error.detail : 'Something went wrong.'
+export function ErrorState({
+  error,
+  onRetry,
+  fallbackTitle = 'Something went wrong.',
+  retryLabel = 'Retry',
+  formatRetryAfter = (seconds: number) => `Try again in ${seconds}s`,
+}: {
+  error: unknown
+  onRetry?: () => void
+  /** Shown when the error carries no message; English default, pass Indonesian per page. */
+  fallbackTitle?: string
+  /** Retry button label; English default, pass Indonesian per page. */
+  retryLabel?: string
+  /** Rate-limit hint; English default, pass Indonesian per page. */
+  formatRetryAfter?: (seconds: number) => string
+}) {
+  const message = error instanceof ApiError ? error.detail : fallbackTitle
   const retryAfter = error instanceof ApiError ? error.retryAfterSeconds : undefined
   return (
     <div
@@ -14,11 +29,11 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       <AlertTriangle className="animate-shake-once size-8 text-destructive" aria-hidden="true" />
       <p className="text-sm font-medium text-destructive">{message}</p>
       {retryAfter !== undefined && (
-        <p className="text-xs text-muted-foreground">Try again in {retryAfter}s</p>
+        <p className="text-xs text-muted-foreground">{formatRetryAfter(retryAfter)}</p>
       )}
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          Retry
+          {retryLabel}
         </Button>
       )}
     </div>
