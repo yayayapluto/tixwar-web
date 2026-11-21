@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthPageSkeleton } from '@/components/skeletons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AuthForm } from '@/features/auth/auth-form'
+import { AuthForm, clearAuthEmailDraft } from '@/features/auth/auth-form'
 import { useRegister } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
 import { ApiError } from '@/lib/errors'
@@ -19,6 +19,15 @@ export const Route = createFileRoute('/register')({
   pendingComponent: () => <AuthPageSkeleton variant="register" />,
 })
 
+function redirectLabel(redirect: string): string {
+  if (redirect.startsWith('/events/')) return 'the event you were viewing'
+  if (redirect === '/events') return 'the event list'
+  if (redirect.startsWith('/orders')) return 'your orders'
+  if (redirect.startsWith('/tickets')) return 'your tickets'
+  if (redirect === '/api-keys') return 'API keys'
+  return 'where you left off'
+}
+
 function RegisterPage() {
   const navigate = useNavigate()
   const register = useRegister()
@@ -30,8 +39,14 @@ function RegisterPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create account</CardTitle>
-          <CardDescription>
-            Create an account to buy before it sells out. Already registered?{' '}
+          <CardDescription className="min-h-10">
+            {redirectTo ? (
+              <>
+                Create an account to continue to {redirectLabel(redirectTo)}. Already registered?{' '}
+              </>
+            ) : (
+              <>Create an account to buy before it sells out. Already registered? </>
+            )}
             <Link
               to="/login"
               search={redirectTo ? { redirect: redirectTo } : undefined}
@@ -52,7 +67,13 @@ function RegisterPage() {
                 { email, password },
                 {
                   onSuccess: () => {
-                    toast("You're in — pick your event", { variant: 'success' })
+                    clearAuthEmailDraft()
+                    toast(
+                      redirectTo
+                        ? `You're in — back to ${redirectLabel(redirectTo)}`
+                        : "You're in — pick your event",
+                      { variant: 'success' },
+                    )
                     navigate({ to: redirectTo ?? '/events' })
                   },
                 },

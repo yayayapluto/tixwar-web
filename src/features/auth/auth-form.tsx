@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Eye, EyeOff } from 'lucide-react'
+import { Check, Eye, EyeOff, X } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -9,14 +9,78 @@ import { ApiError } from '@/lib/errors'
 
 export const MIN_PASSWORD_LENGTH = 10
 
-export function AuthFormError({ error }: { error: unknown }) {
+// The email the user typed, kept in sessionStorage so a refresh or a trip to
+// the other auth page doesn't wipe the form. Never the password.
+const EMAIL_DRAFT_KEY = 'tixwar.auth.email-draft'
+
+function readEmailDraft(): string {
+  try {
+    return sessionStorage.getItem(EMAIL_DRAFT_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function clearAuthEmailDraft() {
+  try {
+    sessionStorage.removeItem(EMAIL_DRAFT_KEY)
+  } catch {
+    // Storage unavailable; the draft simply isn't kept.
+  }
+}
+
+function persistEmailDraft(email: string) {
+  try {
+    sessionStorage.setItem(EMAIL_DRAFT_KEY, email)
+  } catch {
+    // Storage unavailable; the draft simply isn't kept.
+  }
+}
+
+export function AuthFormError({
+  error,
+  showResetLink,
+}: {
+  error: unknown
+  showResetLink?: boolean
+}) {
   if (!error) return null
-  const message =
-    error instanceof ApiError ? error.detail : 'Something went wrong. Please try again.'
-  const retryAfter = error instanceof ApiError ? error.retryAfterSeconds : undefined
+  const isApiError = error instanceof ApiError
+  const isUnauthorized = isApiError && (error.status === 401 || error.code === 'UNAUTHORIZED')
+  const retryAfter = isApiError ? error.retryAfterSeconds : undefined
+  const fieldErrors = isApiError ? (error.errors ?? []) : []
   return (
     <div role="alert" className="space-y-1">
-      <p className="text-sm text-destructive">{message}</p>
+      {isUnauthorized ? (
+        <p className="text-sm text-destructive">
+          Wrong email or password. Try again, or{' '}
+          {showResetLink ? (
+            <Link to="/forgot-password" className="underline underline-offset-4">
+              reset your password
+            </Link>
+          ) : (
+            'reset your password'
+          )}
+          .
+        </p>
+      ) : (
+        <p className="text-sm text-destructive">
+          {isApiError ? error.detail : 'Something went wrong. Please try again.'}
+        </p>
+      )}
+      {fieldErrors.length > 0 && (
+        <ul className="space-y-0.5">
+          {fieldErrors.map((fieldError) => (
+            <li
+              key={`${fieldError.field ?? 'field'}-${fieldError.message}`}
+              className="text-xs text-destructive"
+            >
+              {fieldError.field ? <span className="capitalize">{fieldError.field}: </span> : null}
+              {fieldError.message}
+            </li>
+          ))}
+        </ul>
+      )}
       {retryAfter !== undefined && (
         <p className="text-xs text-muted-foreground">Try again in {retryAfter}s</p>
       )}
@@ -37,13 +101,15 @@ export function AuthForm({
   isPending: boolean
   error?: unknown
 }) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(readEmailDraft)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   // Checked by default: an unchecked box silently drops the session when the
   // browser closes, while register already persists for 7 days.
   const [rememberMe, setRememberMe] = useState(true)
   const [clientError, setClientError] = useState<string | null>(null)
+  const [passwordTouched, setPasswordTouched] = useState(false)
+  const passwordLengthMet = password.length >= MIN_PASSWORD_LENGTH
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -67,7 +133,10 @@ export function AuthForm({
           autoComplete="email"
           autoFocus
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            persistEmailDraft(e.target.value)
+          }}
           required
         />
       </div>
@@ -84,7 +153,9 @@ export function AuthForm({
             onChange={(e) => {
               setPassword(e.target.value)
               setClientError(null)
+              setPasswordTouched(true)
             }}
+            onBlur={() => setPasswordTouched(true)}
             required
             className="pr-10"
           />
@@ -111,11 +182,23 @@ export function AuthForm({
             )}
           </Button>
         </div>
-        {mode === 'register' && (
-          <p id="password-hint" className="text-xs text-muted-foreground">
-            At least {MIN_PASSWORD_LENGTH} characters.
-          </p>
-        )}
+        {mode === 'register' &&
+          (passwordTouched ? (
+            <p id="password-hint" className="flex items-center gap-1.5 text-xs">
+              {passwordLengthMet ? (
+                <Check className="size-3.5 text-success" aria-hidden="true" />
+              ) : (
+                <X className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              )}
+              <span className={passwordLengthMet ? 'text-success' : 'text-muted-foreground'}>
+                At least {MIN_PASSWORD_LENGTH} characters
+              </span>
+            </p>
+          ) : (
+            <p id="password-hint" className="text-xs text-muted-foreground">
+              At least {MIN_PASSWORD_LENGTH} characters.
+            </p>
+          ))}
         {mode === 'login' && (
           <div className="flex justify-end">
             <Link
@@ -151,7 +234,7 @@ export function AuthForm({
             {clientError}
           </p>
         ) : (
-          <AuthFormError error={error} />
+          <AuthFormError error={error} showResetLink={mode === 'login'} />
         )}
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>

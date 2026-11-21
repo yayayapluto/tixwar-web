@@ -32,8 +32,18 @@ async function refreshAccessToken(): Promise<string | null> {
       expiresIn: result.expiresIn,
     })
     return result.accessToken
-  } catch {
+  } catch (error) {
     clearSession()
+    // The refresh token itself is dead (expired or revoked): send the user to
+    // login with the reason, so the page can explain the session ended.
+    // A non-401 failure (e.g. the network dropped) leaves the user where they
+    // are; the in-flight request surfaces its own error instead.
+    if (
+      toApiError(error).status === 401 &&
+      !['/login', '/register'].includes(window.location.pathname)
+    ) {
+      window.location.assign('/login?reason=session-expired')
+    }
     return null
   }
 }

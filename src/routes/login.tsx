@@ -1,14 +1,17 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { AuthPageSkeleton } from '@/components/skeletons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AuthForm } from '@/features/auth/auth-form'
+import { AuthForm, clearAuthEmailDraft } from '@/features/auth/auth-form'
 import { useLogin } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { toast } from '@/lib/toast'
 
 export const Route = createFileRoute('/login')({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    if (typeof search.redirect === 'string') return { redirect: search.redirect }
-    return {}
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; reason?: string } => {
+    const out: { redirect?: string; reason?: string } = {}
+    if (typeof search.redirect === 'string') out.redirect = search.redirect
+    if (search.reason === 'session-expired') out.reason = 'session-expired'
+    return out
   },
   beforeLoad: ({ search }) => {
     if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
@@ -29,7 +32,10 @@ function redirectLabel(redirect: string): string {
 function LoginPage() {
   const navigate = useNavigate()
   const login = useLogin()
-  const { redirect: redirectTo } = Route.useSearch()
+  const { redirect: redirectTo, reason } = Route.useSearch()
+  const isGateRedirect =
+    redirectTo !== undefined &&
+    (redirectTo.startsWith('/events/') || redirectTo.startsWith('/orders'))
 
   return (
     <div className="mx-auto max-w-sm pt-8">
@@ -50,8 +56,18 @@ function LoginPage() {
               Create an account
             </Link>
           </CardDescription>
+          {isGateRedirect && (
+            <p className="text-sm">
+              You&apos;re one step from checkout — log in to keep your place.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
+          {reason === 'session-expired' && (
+            <p role="status" className="mb-4 rounded-md border bg-muted px-3 py-2 text-sm">
+              Your session ended after 7 days. Log in again to continue.
+            </p>
+          )}
           <AuthForm
             mode="login"
             submitLabel="Log in"
@@ -60,7 +76,18 @@ function LoginPage() {
             onSubmit={(email, password, rememberMe) =>
               login.mutate(
                 { email, password, rememberMe },
-                { onSuccess: () => navigate({ to: redirectTo ?? '/events' }) },
+                {
+                  onSuccess: () => {
+                    clearAuthEmailDraft()
+                    toast(
+                      redirectTo
+                        ? `You're in — back to ${redirectLabel(redirectTo)}`
+                        : "You're in — welcome back",
+                      { variant: 'success' },
+                    )
+                    navigate({ to: redirectTo ?? '/events' })
+                  },
+                },
               )
             }
           />
