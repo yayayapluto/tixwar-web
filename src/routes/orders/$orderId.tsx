@@ -162,8 +162,11 @@ function OrderDetailPage() {
           {order.status === 'PAID' ? (
             // PAID occupies the countdown slot with the same three-line shape
             // (label, large line, muted line) so the card keeps its height
-            // when the countdown unmounts at the moment of success.
-            <div className="space-y-1">
+            // when the countdown unmounts at the moment of success. The PAID
+            // lines measure 16 + 32 + 20 + 8 = 76px (text-2xl = 32px) against
+            // the countdown's 16 + 36 + 20 + 8 = 80px (text-3xl = 36px), so
+            // min-h-[80px] closes the 4px gap on the QUEUED -> PAID flip.
+            <div className="min-h-[80px] space-y-1">
               <p className="text-xs text-muted-foreground">Payment status</p>
               <p className="text-2xl font-semibold whitespace-nowrap">Payment received</p>
               <p className="text-sm text-muted-foreground">Paid {formatCurrency(order.total)}</p>
@@ -272,16 +275,21 @@ function OrderDetailPage() {
                     ? `Retry payment · ${formatCurrency(order.total)}`
                     : `Pay ${formatCurrency(order.total)}`}
             </Button>
-            {payError && (
-              <p role="alert" className="text-sm text-destructive">
-                Payment didn&apos;t go through — you haven&apos;t been charged. Try again.
-              </p>
-            )}
-            {order.status === 'PAYMENT_FAILED' && !payError && (
-              <p className="text-sm text-muted-foreground">
-                Payment didn&apos;t go through. You haven&apos;t been charged.
-              </p>
-            )}
+            {/* Error/hint slot keeps a fixed one-line height (text-sm = 20px)
+                whether or not a message shows, so a failed payment cannot
+                push the reassurance line down by 28px (20px line + 8px gap). */}
+            <div className="min-h-5">
+              {payError && (
+                <p role="alert" className="text-sm text-destructive">
+                  Payment didn&apos;t go through — you haven&apos;t been charged. Try again.
+                </p>
+              )}
+              {order.status === 'PAYMENT_FAILED' && !payError && (
+                <p className="text-sm text-muted-foreground">
+                  Payment didn&apos;t go through. You haven&apos;t been charged.
+                </p>
+              )}
+            </div>
             <p className="text-center text-xs text-muted-foreground">
               One tap — retrying never charges you twice.
             </p>
