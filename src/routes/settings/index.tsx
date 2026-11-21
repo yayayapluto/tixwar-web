@@ -94,19 +94,32 @@ function SettingsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            {/* Admins never reach this page (redirected to /api-keys), but
-                the row is guarded anyway: the tour is for regular users. */}
-            {session?.user.role !== 'admin' && (
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Admins never reach this page (redirected to /api-keys), but the
+          section is guarded anyway: the tour is for regular users. */}
+      {session?.user.role !== 'admin' && (
+        <section aria-labelledby="onboarding-heading" className="space-y-4">
+          <h2 id="onboarding-heading" className="text-lg font-semibold">
+            Onboarding
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Replay the guided tour of the events page.
+          </p>
+          <Card>
+            <CardContent className="space-y-2 pt-6">
               <div className="flex items-center justify-between gap-2">
                 <p className="shrink-0 text-sm text-muted-foreground">Show Onboarding</p>
                 <Button variant="outline" size="sm" onClick={() => void tour.startTour()}>
                   Start tour
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       <section aria-labelledby="developer-heading" className="space-y-4">
         <h2 id="developer-heading" className="text-lg font-semibold">
