@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Toggle } from '@/components/ui/toggle'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { getV1Events } from '@/lib/client'
@@ -114,7 +115,13 @@ function EventCard({ event }: { event: EventListItem }) {
   // The neutral count shows scarcity before the cliff; the destructive line
   // is kept for genuinely low stock.
   const showStock = event.status !== 'SOLD_OUT' && event.remaining > 0 && event.totalQuota > 0
-  const showSaleGroup = saleLive || showStock || event.minPrice != null
+  // Reserved slots: the countdown and stock lines keep their height even
+  // after the sale ends or the stock runs out (rendered invisible and
+  // aria-hidden), so a card never shrinks and pushes the rows below it.
+  // The group itself renders whenever any slot or the price can exist.
+  const showCountdownSlot = event.saleEndsAt != null
+  const showStockSlot = event.totalQuota > 0
+  const showSaleGroup = showCountdownSlot || showStockSlot || event.minPrice != null
   return (
     <Link
       to="/events/$eventId"
@@ -149,26 +156,32 @@ function EventCard({ event }: { event: EventListItem }) {
           <p>{formatDate(event.startsAt)}</p>
           {showSaleGroup && (
             <div className="space-y-1 border-t pt-2">
-              {saleLive && (
+              {showCountdownSlot && (
                 <p
+                  aria-hidden={!saleLive}
                   className={cn(
                     'text-sm font-semibold tabular-nums text-foreground',
                     saleEndingSoon && 'text-destructive',
+                    !saleLive && 'invisible',
                   )}
                 >
-                  Sale ends in {formatCountdown(saleSecondsLeft)}
+                  Sale ends in {formatCountdown(saleSecondsLeft ?? 0)}
                 </p>
               )}
-              {showStock &&
-                (lowStock ? (
-                  <p className="text-sm font-medium text-destructive">
-                    Only {event.remaining} left
-                  </p>
-                ) : (
-                  <p className="text-sm tabular-nums">
-                    {event.remaining} of {event.totalQuota} tickets left
-                  </p>
-                ))}
+              {showStockSlot && (
+                <p
+                  aria-hidden={!showStock}
+                  className={cn(
+                    'text-sm tabular-nums',
+                    showStock && lowStock && 'font-medium text-destructive',
+                    !showStock && 'invisible',
+                  )}
+                >
+                  {showStock && lowStock
+                    ? `Only ${event.remaining} left`
+                    : `${event.remaining} of ${event.totalQuota} tickets left`}
+                </p>
+              )}
               {event.minPrice != null && (
                 <p className="text-sm font-medium tabular-nums">
                   {event.maxPrice != null && event.maxPrice !== event.minPrice
@@ -299,6 +312,11 @@ function EventsPage() {
     // never vanishes from the row.
     ...(category !== '' && !visibleCategories.includes(category) ? [category] : []),
   ]
+  // While no category is known yet (first load, or a refetch with an
+  // empty cache) the row shows chip-shaped placeholders instead of
+  // vanishing, so the grid below never jumps when the chips arrive.
+  const showCategoryPlaceholders =
+    knownCategories.length === 0 && (isPending || categoryQuery.isPending)
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -353,12 +371,13 @@ function EventsPage() {
     <div className="space-y-4">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Events</h1>
-        {total !== undefined && (
-          <p className="text-sm text-muted-foreground">
-            {total} events
-            {filtered ? ' matching your search' : ''}
-          </p>
-        )}
+        {/* Always rendered: the line is a blank placeholder until the first
+            page loads, so it never pops in and pushes the filter row down. */}
+        <p className="text-sm text-muted-foreground">
+          {total !== undefined
+            ? `${total} events${filtered ? ' matching your search' : ''}`
+            : '\u00A0'}
+        </p>
       </div>
       {/* Realtime: status, category and sort apply the moment they change.
           Search is realtime too, debounced 300ms. Submit applies the
@@ -432,55 +451,78 @@ function EventsPage() {
           </SelectContent>
         </Select>
         <Button type="submit">Search</Button>
-        {filtered && (
-          <Button type="button" variant="outline" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        )}
+        {/* Always mounted: invisible (not unmounted) while no filter is
+            active, so it never pops in and widens the row or wraps it. */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={clearFilters}
+          disabled={!filtered}
+          aria-hidden={!filtered}
+          tabIndex={filtered ? undefined : -1}
+          className={cn(!filtered && 'invisible')}
+        >
+          Clear filters
+        </Button>
       </form>
 
-      {knownCategories.length > 0 && (
-        <fieldset className="flex flex-wrap gap-2">
-          <legend className="sr-only">Filter by category</legend>
-          <Toggle
-            size="sm"
-            variant="outline"
-            pressed={category === ''}
-            onPressedChange={() => toggleCategory('')}
-            aria-label="Show all categories"
-            className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
-          >
-            All
-          </Toggle>
-          {shownCategories.map((c) => (
+      {/* The row is always mounted with one chip-row of height reserved
+          (min-h-10): it never pops in on load and pushes the grid down.
+          While categories are still loading, chip-shaped placeholders
+          hold the same space. */}
+      <fieldset className="flex min-h-10 flex-wrap gap-2">
+        <legend className="sr-only">Filter by category</legend>
+        {showCategoryPlaceholders && (
+          <>
+            <Skeleton className="h-10 w-14 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-20 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-16 rounded-full" />
+          </>
+        )}
+        {knownCategories.length > 0 && (
+          <>
             <Toggle
-              key={c}
               size="sm"
               variant="outline"
-              pressed={category === c}
-              onPressedChange={() => toggleCategory(c)}
-              aria-label={`Filter by ${titleCase(c)}`}
+              pressed={category === ''}
+              onPressedChange={() => toggleCategory('')}
+              aria-label="Show all categories"
               className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
             >
-              {titleCase(c)}
+              All
             </Toggle>
-          ))}
-          {knownCategories.length > VISIBLE_CHIP_COUNT && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              aria-expanded={showAllCategories}
-              onClick={() => setShowAllCategories((v) => !v)}
-              className="rounded-full"
-            >
-              {showAllCategories
-                ? 'Fewer'
-                : `More (${knownCategories.length - VISIBLE_CHIP_COUNT})`}
-            </Button>
-          )}
-        </fieldset>
-      )}
+            {shownCategories.map((c) => (
+              <Toggle
+                key={c}
+                size="sm"
+                variant="outline"
+                pressed={category === c}
+                onPressedChange={() => toggleCategory(c)}
+                aria-label={`Filter by ${titleCase(c)}`}
+                className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
+              >
+                {titleCase(c)}
+              </Toggle>
+            ))}
+            {knownCategories.length > VISIBLE_CHIP_COUNT && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-expanded={showAllCategories}
+                onClick={() => setShowAllCategories((v) => !v)}
+                className="min-w-20 rounded-full"
+              >
+                {showAllCategories
+                  ? 'Fewer'
+                  : `More (${knownCategories.length - VISIBLE_CHIP_COUNT})`}
+              </Button>
+            )}
+          </>
+        )}
+      </fieldset>
 
       {isPending ? (
         <EventsGridSkeleton />
