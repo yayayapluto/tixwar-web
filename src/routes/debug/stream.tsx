@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity } from 'lucide-react'
+import { Activity, ChevronDown } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { DebugPageSkeleton, TraceListSkeleton } from '@/components/skeletons'
@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -89,15 +90,36 @@ function toastMutationError(error: unknown) {
 
 type ChaosAction = DebugChaosRequest['action']
 
+// Per-action semantics verified against the API
+// (src/modules/debug/chaos.ts, src/infra/chaos.ts, src/mock-gateway/app.ts):
+// gateway maps fail to /toggle-fail {enabled: true} (every charge 503s, value
+// ignored) and failure-rate/slow to {enabled: false} (fail mode off, value
+// ignored); latency sets a per-charge delay. Worker sets Redis
+// chaos:worker:failure-rate to the value for every non-recover action, so
+// all four behave as a failure percentage there and none adds delay.
+// Redis/Mongo set errorRatePercent only for fail, latencyMs only for
+// latency/slow, and both to 0 for failure-rate (no effect).
 const CHAOS_VALUE_HINT: Record<ChaosAction, { label: string; defaultValue?: number }> = {
-  fail: { label: 'Value is the percent of requests that fail (0–100).', defaultValue: 100 },
-  latency: { label: 'Value is added latency in milliseconds.', defaultValue: 200 },
+  fail: {
+    label: 'Gateway: every charge fails. Worker, Redis, Mongo: value% of calls fail.',
+    defaultValue: 100,
+  },
+  latency: {
+    label:
+      'Adds value ms of delay on Gateway, Redis and Mongo. On the worker it sets a failure rate instead, no delay.',
+    defaultValue: 200,
+  },
   recover: { label: 'No value needed — recovers the target.', defaultValue: undefined },
   'failure-rate': {
-    label: 'Value is the percent of requests that fail (0–100).',
+    label:
+      'Worker: same as Fail. Gateway: switches fail mode off, value ignored. Redis/Mongo: no effect.',
     defaultValue: 50,
   },
-  slow: { label: 'Value is added latency in milliseconds.', defaultValue: 1000 },
+  slow: {
+    label:
+      'Same delay as Latency, only the default differs (1000 ms vs 200 ms). On the worker it sets a failure rate instead, no delay.',
+    defaultValue: 1000,
+  },
 }
 
 function chaosUnit(action: ChaosAction): string {
@@ -133,40 +155,64 @@ type ActiveChaos = {
 }
 
 function TraceRow({ trace }: { trace: Trace }) {
+  const [open, setOpen] = useState(false)
   return (
-    <article className="rounded border bg-muted/50 p-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <time dateTime={trace.serverTs ?? trace.ts} className="text-xs font-medium tabular-nums">
-          {timeOfDay(trace.serverTs ?? trace.ts)}
-        </time>
-        {trace.step && <Badge variant="secondary">{trace.step}</Badge>}
-        {trace.status && (
-          <Badge
-            variant={
-              trace.status === 'error'
-                ? 'destructive'
-                : trace.status === 'ok'
-                  ? 'default'
-                  : 'outline'
-            }
-          >
-            {trace.status}
-          </Badge>
-        )}
-        {trace.durationMs !== undefined && (
-          <span className="text-xs text-muted-foreground tabular-nums">{trace.durationMs} ms</span>
-        )}
-        {trace.requestId && (
-          <span className="min-w-0 truncate text-xs text-muted-foreground" title={trace.requestId}>
-            {trace.requestId}
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <article className="rounded border bg-muted/50 p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              aria-label={open ? 'Hide raw trace JSON' : 'Show raw trace JSON'}
+              aria-expanded={open}
+            >
+              <ChevronDown
+                className={`size-4 transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <time dateTime={trace.serverTs ?? trace.ts} className="text-xs font-medium tabular-nums">
+            {timeOfDay(trace.serverTs ?? trace.ts)}
+          </time>
+          {trace.step && <Badge variant="secondary">{trace.step}</Badge>}
+          {trace.status && (
+            <Badge
+              variant={
+                trace.status === 'error'
+                  ? 'destructive'
+                  : trace.status === 'ok'
+                    ? 'default'
+                    : 'outline'
+              }
+            >
+              {trace.status}
+            </Badge>
+          )}
+          {trace.durationMs !== undefined && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {trace.durationMs} ms
+            </span>
+          )}
+          {trace.requestId && (
+            <span
+              className="min-w-0 truncate text-xs text-muted-foreground"
+              title={trace.requestId}
+            >
+              {trace.requestId}
+            </span>
+          )}
+          <span className="ml-auto">
+            <CopyButton value={trace.raw} label="Trace" />
           </span>
-        )}
-        <span className="ml-auto">
-          <CopyButton value={trace.raw} label="Trace" />
-        </span>
-      </div>
-      <pre className="mt-1 overflow-x-auto text-xs">{trace.raw}</pre>
-    </article>
+        </div>
+        <CollapsibleContent>
+          <pre className="mt-1 max-h-64 overflow-auto text-xs">{trace.raw}</pre>
+        </CollapsibleContent>
+      </article>
+    </Collapsible>
   )
 }
 
@@ -369,11 +415,11 @@ function DebugPage() {
               <Button
                 variant={streaming ? 'default' : 'outline'}
                 size="sm"
-                className="w-[7.5rem] justify-center"
+                className="w-[9.5rem] justify-center"
                 onClick={toggleStreaming}
               >
                 <Activity className="size-4" aria-hidden="true" />
-                {streaming ? 'Streaming' : 'Paused'}
+                {streaming ? 'Pause stream' : 'Resume stream'}
               </Button>
             </div>
           </div>
@@ -486,6 +532,12 @@ function DebugPage() {
             <CardTitle>Chaos injection</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div role="note" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                Chaos state is not shown after a refresh — verify on the API before assuming the
+                sale is clean.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="target">Target</Label>
               <Select
@@ -545,7 +597,7 @@ function DebugPage() {
                 value={chaosForm.value ?? ''}
                 onChange={(e) => setChaosForm((f) => ({ ...f, value: Number(e.target.value) }))}
               />
-              <p className="min-h-8 text-xs text-muted-foreground">
+              <p className="min-h-16 text-xs text-muted-foreground">
                 {CHAOS_VALUE_HINT[chaosForm.action].label}
               </p>
             </div>

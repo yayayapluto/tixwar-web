@@ -1,5 +1,15 @@
 import { Activity } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -112,6 +122,21 @@ export function LoadGeneratorForm({
   })
   const [error, setError] = useState<string | null>(null)
   const [lastRun, setLastRun] = useState<LastRun | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+
+  // Live progress while a run is in flight: the load endpoint returns only
+  // when the whole run finishes, so elapsed time is the only progress the
+  // client can show. Cancel is not possible: useDebugLoad's mutation takes
+  // no AbortSignal and its mutationFn lives outside this file, so there is
+  // nothing to abort — the run finishes on the server either way.
+  const running = load.isPending
+  useEffect(() => {
+    if (!running) return
+    setElapsed(0)
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000)
+    return () => clearInterval(timer)
+  }, [running])
 
   function runLoad() {
     const problem = validate(form)
@@ -120,6 +145,10 @@ export function LoadGeneratorForm({
       return
     }
     setError(null)
+    setConfirmOpen(true)
+  }
+
+  function runConfirmed() {
     load.mutate(form, {
       onSuccess: (res) => {
         const summary = parseLoadSummary(res.data)
@@ -146,6 +175,7 @@ export function LoadGeneratorForm({
         <Label htmlFor="scenario">Scenario</Label>
         <Select
           value={form.scenario}
+          disabled={running}
           onValueChange={(v) =>
             setForm((f) => ({
               ...f,
@@ -169,6 +199,7 @@ export function LoadGeneratorForm({
           <Input
             id="eventId"
             value={form.eventId ?? ''}
+            disabled={running}
             onChange={(e) => setForm((f) => ({ ...f, eventId: e.target.value }))}
             placeholder="evt_…"
           />
@@ -178,6 +209,7 @@ export function LoadGeneratorForm({
           <Input
             id="tierId"
             value={form.tierId ?? ''}
+            disabled={running}
             onChange={(e) => setForm((f) => ({ ...f, tierId: e.target.value }))}
             placeholder="tier_…"
           />
@@ -193,6 +225,7 @@ export function LoadGeneratorForm({
             min={1}
             max={200}
             value={form.concurrency}
+            disabled={running}
             onChange={(e) => setForm((f) => ({ ...f, concurrency: Number(e.target.value) }))}
           />
         </div>
@@ -205,6 +238,7 @@ export function LoadGeneratorForm({
             min={1}
             max={5000}
             value={form.requests}
+            disabled={running}
             onChange={(e) => setForm((f) => ({ ...f, requests: Number(e.target.value) }))}
           />
         </div>
@@ -217,6 +251,7 @@ export function LoadGeneratorForm({
             min={1}
             max={10}
             value={form.quantity ?? 1}
+            disabled={running}
             onChange={(e) => setForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
           />
         </div>
@@ -228,21 +263,50 @@ export function LoadGeneratorForm({
           </p>
         )}
       </div>
-      <Button onClick={runLoad} disabled={load.isPending} className="w-full">
+      <Button onClick={runLoad} disabled={running} className="w-full">
         <Activity className="size-4" aria-hidden="true" />
-        {load.isPending ? 'Running…' : 'Run load'}
+        {running ? 'Running…' : 'Run load'}
       </Button>
       <div className="min-h-8">
-        {lastRun && (
-          <p className="text-xs text-muted-foreground tabular-nums">
-            Last run: {lastRun.scenario} · {lastRun.requests} requests · concurrency{' '}
-            {lastRun.concurrency}
-            {lastRun.summary
-              ? ` · ${lastRun.summary.succeeded} succeeded, ${lastRun.summary.failed} failed · ${Math.round(lastRun.summary.requestsPerSecond)} req/s · p95 ${Math.round(lastRun.summary.p95Ms)} ms`
-              : ' · finished, no summary returned'}
+        {running ? (
+          <p className="text-xs text-muted-foreground tabular-nums" role="status">
+            Running {form.scenario} · {form.requests ?? 0} requests · concurrency{' '}
+            {form.concurrency ?? 0} · {elapsed}s elapsed. The run cannot be cancelled once started.
           </p>
+        ) : (
+          lastRun && (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              Last run: {lastRun.scenario} · {lastRun.requests} requests · concurrency{' '}
+              {lastRun.concurrency}
+              {lastRun.summary
+                ? ` · ${lastRun.summary.succeeded} succeeded, ${lastRun.summary.failed} failed · ${Math.round(lastRun.summary.requestsPerSecond)} req/s · p95 ${Math.round(lastRun.summary.p95Ms)} ms`
+                : ' · finished, no summary returned'}
+            </p>
+          )
         )}
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Run load test?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This fires {form.requests ?? 0} requests ({form.scenario} scenario, concurrency{' '}
+              {form.concurrency ?? 0}, quantity {form.quantity ?? 1}) against{' '}
+              {form.tierId
+                ? `tier ${form.tierId}`
+                : form.eventId
+                  ? `event ${form.eventId}`
+                  : 'the live sale'}
+              . It cannot be cancelled once started — only wait for it to finish.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={runConfirmed}>Run load</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
