@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Activity, ChevronLeft } from 'lucide-react'
+import { Activity, ChevronLeft, Timer } from 'lucide-react'
 import { useId, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { EventDetailSkeleton } from '@/components/skeletons'
@@ -68,11 +68,13 @@ function orderErrorMessage(raw: unknown): string {
 
 function TierCard({
   tier,
+  eventId,
   cheapest,
   showSaleWindow,
   onLoadTest,
 }: {
   tier: TicketTier
+  eventId: string
   cheapest?: boolean
   showSaleWindow?: boolean
   onLoadTest?: (tierId: string) => void
@@ -97,8 +99,8 @@ function TierCard({
   const lowStock = remaining !== null && remaining > 0 && remaining <= 10
 
   return (
-    <Card className={cn('flex h-full flex-col', cheapest && 'border-primary')}>
-      <CardHeader>
+    <Card className={cn('flex h-full flex-col', cheapest && 'border-primary ring-1 ring-primary')}>
+      <CardHeader className={cn(cheapest && 'rounded-t-xl bg-primary/5')}>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 truncate leading-snug">{tier.name}</CardTitle>
           <span className="flex shrink-0 items-center gap-2">
@@ -138,17 +140,19 @@ function TierCard({
           (saleOpen && saleSecondsLeft !== null ? (
             <p
               className={cn(
-                'flex min-h-5 items-center text-sm font-medium tabular-nums',
+                'flex min-h-10 items-center gap-2 rounded-md border bg-muted/50 px-3 text-base font-semibold tabular-nums',
                 saleSecondsLeft < 3600 && 'text-destructive',
               )}
             >
+              <Timer className="size-4 shrink-0" aria-hidden="true" />
               Sale ends in&nbsp;
               <span className="inline-block min-w-[8ch] tabular-nums">
                 {formatCountdown(saleSecondsLeft)}
               </span>
             </p>
           ) : (
-            <p className="flex min-h-5 items-center text-xs text-muted-foreground">
+            <p className="flex min-h-10 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">
+              <Timer className="size-4 shrink-0" aria-hidden="true" />
               Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
             </p>
           ))}
@@ -160,6 +164,7 @@ function TierCard({
           ) : (
             <Link
               to="/login"
+              search={{ redirect: `/events/${eventId}` }}
               className={cn(buttonVariants({ variant: 'outline' }), 'mt-auto w-full')}
             >
               Log in to buy
@@ -233,6 +238,9 @@ function TierCard({
                 </span>
               </Button>
             </div>
+            <p className="min-h-5 text-sm tabular-nums text-muted-foreground">
+              Total {formatCurrency(tier.price * quantity)}
+            </p>
             <p role={orderError ? 'alert' : undefined} className="min-h-5 text-sm text-destructive">
               {orderError ?? ''}
             </p>
@@ -246,7 +254,8 @@ function TierCard({
 function EventDetailPage() {
   const { eventId } = Route.useParams()
   const session = useSession()
-  const event = useEvent(eventId)
+  const navigate = useNavigate()
+  const event = useEvent(eventId, true, true)
   const stats = useEventStats(eventId)
   useStockStream(eventId, true)
   const [loadDrawer, setLoadDrawer] = useState<{ open: boolean; tierId?: string }>({
@@ -280,16 +289,31 @@ function EventDetailPage() {
   const now = Date.now()
   const saleOpen = Boolean(saleWindow) && now >= saleStart && now <= saleEnd
 
+  // Back keeps the list filters: the list links here without search params,
+  // so there is nothing to preserve — history back returns to the filtered
+  // list. A deep link (no prior entry) falls back to the unfiltered list.
+  const goBackToEvents = () => {
+    if (window.history.length > 1) {
+      window.history.back()
+    } else {
+      navigate({
+        to: '/events',
+        search: { q: '', status: '', category: '', page: 1, sort: 'ending' },
+      })
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <Link
-        to="/events"
-        search={{ q: '', status: '', category: '', page: 1, sort: 'ending' }}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={goBackToEvents}
+        className="-ml-2 h-auto px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden="true" />
         Back to events
-      </Link>
+      </Button>
       <div className="space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words">{detail.name}</h1>
@@ -314,17 +338,19 @@ function EventDetailPage() {
           (saleOpen && saleSecondsLeft !== null ? (
             <p
               className={cn(
-                'flex min-h-5 items-center text-sm font-medium tabular-nums',
+                'flex min-h-10 items-center gap-2 rounded-md border bg-muted/50 px-3 text-base font-semibold tabular-nums',
                 saleSecondsLeft < 3600 && 'text-destructive',
               )}
             >
+              <Timer className="size-4 shrink-0" aria-hidden="true" />
               Sale ends in&nbsp;
               <span className="inline-block min-w-[8ch] tabular-nums">
                 {formatCountdown(saleSecondsLeft)}
               </span>
             </p>
           ) : (
-            <p className="flex min-h-5 items-center text-xs text-muted-foreground">
+            <p className="flex min-h-10 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">
+              <Timer className="size-4 shrink-0" aria-hidden="true" />
               Sale: {formatDate(saleWindow.saleStartsAt)} – {formatDate(saleWindow.saleEndsAt)}
             </p>
           ))}
@@ -360,6 +386,7 @@ function EventDetailPage() {
             <TierCard
               key={tier.id}
               tier={tier}
+              eventId={eventId}
               cheapest={tier.id === cheapestTierId}
               showSaleWindow={!sharedSaleWindow}
               onLoadTest={(tierId) => setLoadDrawer({ open: true, tierId })}

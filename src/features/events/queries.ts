@@ -28,7 +28,7 @@ export function useEvents(filters: EventFilters) {
   })
 }
 
-export function useEvent(id: string, includeTiers = true) {
+export function useEvent(id: string, includeTiers = true, pollWhileSaleOpen = false) {
   return useQuery({
     queryKey: ['event', id],
     queryFn: async () =>
@@ -40,6 +40,22 @@ export function useEvent(id: string, includeTiers = true) {
         })
       ).data,
     enabled: id.length > 0,
+    // Other buyers' purchases emit no event on the event stream — only
+    // stock.released is published to the stock:{eventId} channel — so while
+    // a sale is open, poll every 15s so the remaining stock stays live.
+    // Once no tier's sale window is open, polling stops on its own.
+    refetchInterval: pollWhileSaleOpen
+      ? (query) => {
+          const tiers = query.state.data?.data.tiers ?? []
+          const now = Date.now()
+          const saleOpen = tiers.some(
+            (tier) =>
+              new Date(tier.saleStartsAt).getTime() <= now &&
+              now <= new Date(tier.saleEndsAt).getTime(),
+          )
+          return saleOpen ? 15_000 : false
+        }
+      : false,
   })
 }
 
