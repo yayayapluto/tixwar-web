@@ -85,7 +85,6 @@ export function EventsPageSkeleton() {
         <Skeleton className="h-10 w-20 rounded-full" />
         <Skeleton className="h-10 w-24 rounded-full" />
         <Skeleton className="h-10 w-16 rounded-full" />
-        <Skeleton className="h-10 w-20 rounded-full" />
       </div>
       <EventsGrid count={12} />
     </SkeletonShell>
@@ -143,7 +142,9 @@ function OrderCardSkeleton() {
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-4 min-w-0 flex-1" />
+          {/* Same height as the real title: text-base with leading-snug
+              (22px line), so the bar is h-[22px], not h-4. */}
+          <Skeleton className="h-[22px] min-w-0 flex-1" />
           <Skeleton className="h-5 w-20 shrink-0" />
         </div>
       </CardHeader>
@@ -231,7 +232,9 @@ function TicketCardSkeleton() {
   return (
     <Card>
       <CardHeader>
-        <Skeleton className="h-4 w-2/3" />
+        {/* Same height as the real title: text-base with leading-snug
+            (22px line), so the bar is h-[22px], not h-4. */}
+        <Skeleton className="h-[22px] w-2/3" />
       </CardHeader>
       <CardContent className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
@@ -296,8 +299,13 @@ export function TicketDetailSkeleton() {
             <Skeleton className="h-5 w-3/4" />
             <Skeleton className="h-5 w-1/2" />
           </div>
-          <div className="rounded-lg border bg-white p-4">
-            <Skeleton className="mx-auto aspect-square w-full max-w-56" />
+          {/* Same fixed slot as the real QR box: h-[258px] (224px image +
+              2x16px padding + 2px border). The old aspect-square + max-w-56
+              math undershot on very narrow viewports. */}
+          <div className="h-[258px]">
+            <div className="flex h-full justify-center rounded-lg border bg-white p-4">
+              <Skeleton className="size-56" />
+            </div>
           </div>
           <div className="rounded-lg border border-transparent p-3">
             <Skeleton className="mx-auto h-9 w-40" />

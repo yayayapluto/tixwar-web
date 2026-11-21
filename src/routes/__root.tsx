@@ -89,7 +89,7 @@ function BottomBar() {
       {pill && (
         <span
           aria-hidden="true"
-          className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-secondary transition-[transform,width] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-secondary transition-[transform,width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ transform: `translateX(${pill.left}px)`, width: pill.width }}
         />
       )}
@@ -146,13 +146,13 @@ function Header() {
             {theme === 'dark' ? (
               <Sun
                 key="sun"
-                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
+                className="size-4 animate-in duration-200 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             ) : (
               <Moon
                 key="moon"
-                className="size-4 animate-in duration-300 ease-out fade-in zoom-in-90 spin-in-90"
+                className="size-4 animate-in duration-200 ease-out fade-in zoom-in-90 spin-in-90"
                 aria-hidden="true"
               />
             )}

@@ -247,17 +247,17 @@
 }
 
 .animate-fade-up {
-  animation: fade-up 450ms var(--ease-out) both;
+  animation: fade-up 200ms var(--ease-out) both;
 }
 
 .animate-pop {
-  animation: pop 300ms ease-out;
+  animation: pop 200ms ease-out;
 }
 
 .animate-shake-once {
-  animation: shake 400ms ease-out;
+  animation: shake 200ms ease-out;
 }
 
 .animate-bar-in {
-  animation: bar-in 500ms var(--ease-out) both;
+  animation: bar-in 200ms var(--ease-out) both;
 }
