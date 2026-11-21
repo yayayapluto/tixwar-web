@@ -29,12 +29,15 @@ function SettingsPage() {
         <Card>
           <CardContent className="space-y-2 pt-6">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="truncate text-sm font-medium">{session?.user.email}</p>
+              <p className="shrink-0 text-sm text-muted-foreground">Email</p>
+              <p className="min-h-5 min-w-0 truncate text-sm font-medium">{session?.user.email}</p>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">Role</p>
-              <Badge variant={isAdmin ? 'default' : 'secondary'}>
+              <p className="shrink-0 text-sm text-muted-foreground">Role</p>
+              <Badge
+                variant={isAdmin ? 'default' : 'secondary'}
+                className="min-w-[5.5rem] shrink-0 justify-center"
+              >
                 {isAdmin ? 'Admin' : 'Customer'}
               </Badge>
             </div>

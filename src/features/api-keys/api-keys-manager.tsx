@@ -68,12 +68,21 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
             {isExpired ? 'Expired' : 'Expires'} {formatDate(apiKey.expiresAt)}
           </p>
         )}
-        {!apiKey.active && apiKey.revokedAt && (
+        {!apiKey.active && apiKey.revokedAt ? (
           <p className="text-xs text-muted-foreground">Revoked {formatDate(apiKey.revokedAt)}</p>
+        ) : (
+          // Reserved slot: keep the row height identical after a revoke, so
+          // the rows below never jump when the Revoked line appears.
+          <p aria-hidden="true" className="invisible text-xs text-muted-foreground">
+            Revoked —
+          </p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={!apiKey.active || isExpired ? 'secondary' : 'success'}>
+      <div className="flex w-44 shrink-0 items-center justify-between gap-2">
+        <Badge
+          variant={!apiKey.active || isExpired ? 'secondary' : 'success'}
+          className="min-w-[4.75rem] shrink-0 justify-center"
+        >
           {!apiKey.active ? 'Revoked' : isExpired ? 'Expired' : 'Active'}
         </Badge>
         {apiKey.active && (
@@ -96,11 +105,13 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
                   Integrations using this key will stop working. This can&apos;t be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              {revoke.isError && (
-                <p role="alert" className="text-sm text-destructive">
-                  {mutationErrorMessage(revoke.error)}
-                </p>
-              )}
+              <p
+                role="alert"
+                aria-hidden={!revoke.isError}
+                className={`min-h-5 text-sm ${revoke.isError ? 'text-destructive' : 'invisible'}`}
+              >
+                {revoke.isError ? mutationErrorMessage(revoke.error) : ''}
+              </p>
               <AlertDialogFooter>
                 <AlertDialogCancel>Keep key</AlertDialogCancel>
                 <AlertDialogAction
@@ -141,8 +152,13 @@ export function ApiKeysManager() {
   const [explainerOpen, setExplainerOpen] = useState<boolean | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  const hasKeys = (query.data?.data.length ?? 0) > 0
-  const showExplainer = explainerOpen ?? (!hasKeys || created !== null)
+  // Auto value captured once at mount, from whatever the list cache already
+  // knows (a revisit) — otherwise open. Never re-derive it from the live
+  // query: while the list is loading the query has no data, so re-deriving
+  // after it resolves would collapse the explainer under a returning user
+  // and shove the Create card and the list down. A manual toggle wins.
+  const [autoExplainerOpen] = useState(() => (query.data?.data.length ?? 0) === 0)
+  const showExplainer = explainerOpen ?? (autoExplainerOpen || created !== null)
   const exampleCurl = `curl -H "X-API-Key: ${created?.apiKey ?? '<your-key>'}" ${API_BASE_URL}/v1/events`
 
   return (
@@ -173,7 +189,7 @@ export function ApiKeysManager() {
               <div className="space-y-1.5">
                 <p className="text-sm font-medium">Base URL</p>
                 <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs whitespace-nowrap">
                     {API_BASE_URL}
                   </code>
                   <CopyButton
@@ -186,7 +202,7 @@ export function ApiKeysManager() {
               <div className="space-y-1.5">
                 <p className="text-sm font-medium">Example</p>
                 <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-xs whitespace-nowrap">
                     {exampleCurl}
                   </code>
                   <CopyButton
@@ -233,7 +249,7 @@ export function ApiKeysManager() {
               )
             }}
           >
-            <div className="flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-2">
               <Label htmlFor="key-name" className="sr-only">
                 Key name
               </Label>
@@ -246,7 +262,7 @@ export function ApiKeysManager() {
                 required
               />
             </div>
-            <div className="w-44 space-y-2">
+            <div className="w-44 shrink-0 space-y-2">
               <Label htmlFor="key-expiry" className="sr-only">
                 Expiry
               </Label>
@@ -262,7 +278,11 @@ export function ApiKeysManager() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" disabled={create.isPending || name.trim().length === 0}>
+            <Button
+              type="submit"
+              className="w-28 shrink-0"
+              disabled={create.isPending || name.trim().length === 0}
+            >
               {create.isPending ? 'Creating…' : 'Create'}
             </Button>
           </form>
@@ -281,7 +301,7 @@ export function ApiKeysManager() {
               with this key.
             </p>
             <div className="flex items-center gap-2">
-              <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-sm">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted p-2 font-mono text-sm whitespace-nowrap">
                 {created.apiKey}
               </code>
               <CopyButton
@@ -320,11 +340,12 @@ export function ApiKeysManager() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            {!keyCopied && (
-              <p className="text-xs text-muted-foreground">
-                Copy the key first — once dismissed, it can&apos;t be shown again.
-              </p>
-            )}
+            <p
+              aria-hidden={keyCopied}
+              className={`text-xs text-muted-foreground ${keyCopied ? 'invisible' : ''}`}
+            >
+              Copy the key first — once dismissed, it can&apos;t be shown again.
+            </p>
           </CardContent>
         </Card>
       )}
