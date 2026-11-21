@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>TixWar - Pitch Deck Arsitektur Backend</title>
+<style>
+@page { size: 1280px 720px; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DejaVu Sans', sans-serif; background: #ffffff; }
+.slide { width: 1280px; height: 720px; page-break-after: always; position: relative; overflow: hidden; padding: 44px 56px 64px; background: #f8fafc; color: #1e293b; }
+.slide:last-child { page-break-after: auto; }
+.kicker { font-size: 13px; letter-spacing: 3px; color: #15803d; font-weight: bold; margin-bottom: 10px; }
+h1 { font-size: 38px; color: #14532d; line-height: 1.15; margin-bottom: 14px; }
+.lede { font-size: 20px; color: #475569; line-height: 1.45; }
+ul { list-style: none; }
+ul li { font-size: 21px; line-height: 1.45; margin-bottom: 15px; padding-left: 26px; position: relative; }
+ul li::before { content: ""; position: absolute; left: 0; top: 11px; width: 10px; height: 10px; background: #16a34a; border-radius: 2px; }
+ul li b, p b { color: #14532d; }
+code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.9em; background: #e8eef4; padding: 1px 6px; border-radius: 4px; color: #14532d; }
+.footer { position: absolute; left: 56px; right: 56px; bottom: 20px; display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.cols { display: flex; gap: 44px; }
+.col { flex: 1; }
+.col h2 { font-size: 22px; color: #14532d; border-bottom: 3px solid #16a34a; padding-bottom: 8px; margin-bottom: 18px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; }
+.card h3 { font-size: 20px; color: #14532d; margin-bottom: 6px; }
+.card h3 code { background: none; padding: 0; }
+.card p { font-size: 16px; line-height: 1.5; color: #475569; }
+.diagram { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; text-align: center; }
+.diagram img { display: block; margin: 0 auto; }
+.mini4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px; }
+.mini { background: #ffffff; border: 1px solid #e2e8f0; border-top: 4px solid #16a34a; border-radius: 8px; padding: 12px 14px; }
+.mini h3 { font-size: 17px; color: #14532d; margin-bottom: 4px; }
+.mini p { font-size: 14px; line-height: 1.45; color: #475569; }
+ol.steps { list-style: none; counter-reset: s; }
+ol.steps li { counter-increment: s; font-size: 22px; padding-left: 66px; position: relative; margin-bottom: 20px; line-height: 1.45; }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 46px; height: 46px; background: #16a34a; color: #ffffff; border-radius: 50%; font-size: 22px; font-weight: bold; text-align: center; line-height: 46px; }
+.chips { display: flex; gap: 14px; margin-top: 16px; }
+.chip { flex: 1; background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 8px; padding: 12px 14px; font-size: 15px; line-height: 1.45; color: #334155; }
+.chip b { color: #14532d; }
+.kv { margin-bottom: 18px; }
+.kv h2 { font-size: 20px; color: #14532d; margin-bottom: 5px; }
+.kv p { font-size: 20px; line-height: 1.5; color: #334155; }
+.note { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px; font-size: 18px; line-height: 1.45; color: #57534e; }
+.slide.title { background: #14532d; color: #ffffff; padding: 96px 72px; }
+.slide.title .kicker { color: #86efac; }
+.slide.title h1 { font-size: 96px; color: #ffffff; margin-bottom: 6px; }
+.slide.title .sub { font-size: 34px; color: #bbf7d0; margin-bottom: 28px; }
+.slide.title .tag { font-size: 22px; line-height: 1.5; color: #dcfce7; max-width: 900px; margin-bottom: 40px; }
+.slide.title .meta { font-size: 18px; color: #86efac; }
+.slide.title .stack { font-size: 16px; color: #bbf7d0; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Judul -->
+<section class="slide title">
+  <div class="kicker">PITCH DECK &middot; ARSITEKTUR BACKEND</div>
+  <h1>TixWar</h1>
+  <div class="sub">Flash-Sale Ticketing</div>
+  <div class="tag">Sistem tiket yang tetap aman saat ribuan orang berebut stok dalam hitungan detik.</div>
+  <div class="meta">21 November 2026</div>
+  <div class="stack">API: Bun + Express 5 &middot; MongoDB 7 &middot; Redis 7 &middot; BullMQ</div>
+</section>
+
+<!-- 2. Gambaran proyek -->
+<section class="slide">
+  <div class="kicker">GAMBARAN PROYEK</div>
+  <h1>Kenapa flash sale itu sulit</h1>
+  <div class="cols">
+    <div class="col">
+      <h2>Masalah</h2>
+      <ul>
+        <li>Ribuan pengguna berebut stok terbatas dalam hitungan detik.</li>
+        <li>Satu kursi tidak boleh terjual dua kali.</li>
+        <li>Klik berulang dan retry dapat membuat order ganda.</li>
+        <li>Satu dependency mati tidak boleh mematikan seluruh sistem.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>Janji sistem</h2>
+      <ul>
+        <li><b>Nol oversell.</b> Stok dijaga atomik di Redis.</li>
+        <li><b>Tanpa order ganda.</b> Idempotency-Key di tiap mutasi order dan pay.</li>
+        <li><b>Tetap jalan.</b> Pembayaran async, circuit breaker, dan outbox.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 2 / 12</span></div>
+</section>
+
+<!-- 3. Arsitektur API -->
+<section class="slide">
+  <div class="kicker">ARSITEKTUR</div>
+  <h1>Arsitektur API</h1>
+  <div class="diagram"><img src="__API_ARCH__" alt="Arsitektur API TixWar" style="width:1160px;"></div>
+  <div class="mini4">
+    <div class="mini"><h3>API</h3><p>Bun + Express 5, 3 replika proses.</p></div>
+    <div class="mini"><h3>Worker</h3><p>BullMQ, menagih gateway dan menerbitkan tiket.</p></div>
+    <div class="mini"><h3>Outbox publisher</h3><p>Polling outbox, lalu enqueue job.</p></div>
+    <div class="mini"><h3>Mock gateway</h3><p>Simulasi pembayaran untuk pengujian.</p></div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 3 / 12</span></div>
+</section>
+
+<!-- 4. Modul-modul API -->
+<section class="slide">
+  <div class="kicker">MODUL API</div>
+  <h1>Modul-modul API</h1>
+  <p class="lede" style="margin-bottom:20px;">Modular monolith: satu codebase, tiga proses (API, worker, outbox-publisher). Bukan microservices.</p>
+  <div class="cards">
+    <div class="card"><h3><code>auth</code></h3><p>Login, refresh token, lupa dan reset password. JWT access 15 menit, refresh 7 hari.</p></div>
+    <div class="card"><h3><code>events</code></h3><p>CRUD event dan statistik. SSE stream untuk stok dan status event.</p></div>
+    <div class="card"><h3><code>orders</code></h3><p>Buat dan batalkan order. Gerbang stok atomik di Redis.</p></div>
+    <div class="card"><h3><code>payments</code></h3><p>Terima permintaan bayar, lalu serahkan ke worker. Status order mengikuti hasil tagihan.</p></div>
+    <div class="card"><h3><code>apikeys</code></h3><p>Kunci API untuk klien eksternal, dengan expiry opsional dan lastUsedAt.</p></div>
+    <div class="card"><h3><code>debug</code></h3><p>Load generator, chaos injection, dan trace stream SSE.</p></div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 4 / 12</span></div>
+</section>
+
+<!-- 5. Data layer -->
+<section class="slide">
+  <div class="kicker">DATA LAYER</div>
+  <h1>Data layer: tiga penjaga konsistensi</h1>
+  <div class="cols">
+    <div class="col">
+      <h2>MongoDB 7</h2>
+      <ul>
+        <li>Sharded via mongos, shard key <code>userId</code>.</li>
+        <li>Order dan event outbox ditulis dalam satu transaksi.</li>
+        <li>Order tanpa event tidak akan terjadi.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>Redis 7</h2>
+      <ul>
+        <li>Atomic stock gate: Lua reserve <code>stock:{tierId}</code>.</li>
+        <li>Cache event dan stok.</li>
+        <li>Channel <code>order:{id}</code> untuk status order via SSE.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>BullMQ + outbox</h2>
+      <ul>
+        <li>Outbox polling dengan lease.</li>
+        <li>At-least-once, jobId deterministik.</li>
+        <li>Antrean: order, payment, notification, webhook, expiry, dlq.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 5 / 12</span></div>
+</section>
+
+<!-- 6. Alur pemesanan -->
+<section class="slide">
+  <div class="kicker">ALUR PEMESANAN</div>
+  <h1>Alur pemesanan</h1>
+  <div class="diagram"><img src="__ORDER_FLOW__" alt="Alur pemesanan TixWar" style="width:820px;"></div>
+  <div class="chips">
+    <div class="chip"><b>1. Reserve stok</b><br>di Redis, Lua, atomik.</div>
+    <div class="chip"><b>2. Tulis order</b><br>order + outbox dalam satu transaksi MongoDB.</div>
+    <div class="chip"><b>3. Enqueue job</b><br>publisher mengirim event ke BullMQ.</div>
+    <div class="chip"><b>4. Tiket terbit</b><br>worker menagih gateway, lalu tiket + QR terbit.</div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 6 / 12</span></div>
+</section>
+
+<!-- 7. Pembayaran async -->
+<section class="slide">
+  <div class="kicker">PEMBAYARAN</div>
+  <h1>Pembayaran async: bayar tidak pernah menunggu gateway</h1>
+  <ol class="steps">
+    <li><code>POST /v1/orders/{id}/pay</code> hanya mengembalikan <b>202 QUEUED</b>.</li>
+    <li>Event <code>payment.requested</code> masuk outbox, lalu publisher enqueue ke BullMQ.</li>
+    <li>Worker menagih mock-gateway lewat <b>circuit breaker</b>.</li>
+    <li>Berhasil: <code>order.paid</code>, tiket + QR ke MinIO, <code>order.confirmed</code>.</li>
+    <li>Bayar gagal: stok <b>tidak dilepas</b>. Stok hanya dilepas saat order kedaluwarsa atau dibatalkan.</li>
+  </ol>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 7 / 12</span></div>
+</section>
+
+<!-- 8. Auth + API keys -->
+<section class="slide">
+  <div class="kicker">KEAMANAN</div>
+  <h1>Auth dan API keys</h1>
+  <div class="cols">
+    <div class="col">
+      <h2>Auth (JWT)</h2>
+      <ul>
+        <li>Access 15 menit, refresh 7 hari.</li>
+        <li>Refresh memakai rotasi dan deteksi reuse.</li>
+        <li>Login menerima email atau identifier admin.</li>
+        <li>Lupa password: token sha256, 1 jam, sekali pakai.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>API keys</h2>
+      <ul>
+        <li>Expiry opsional: 7, 30, atau 90 hari.</li>
+        <li>Kunci kedaluwarsa mengembalikan 401.</li>
+        <li><code>lastUsedAt</code> tercatat di tiap pemakaian.</li>
+        <li>Kunci dikelola dari halaman API keys.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 8 / 12</span></div>
+</section>
+
+<!-- 9. Debug, chaos, load test -->
+<section class="slide">
+  <div class="kicker">KETAHANAN</div>
+  <h1>Debug, chaos, dan load test</h1>
+  <ul>
+    <li><b>Load generator.</b> Skenario crowd: simulasi ribuan pembeli menyerbu satu event.</li>
+    <li><b>Chaos injection.</b> Satu bagian dimatikan dengan sengaja, lalu dampaknya diamati.</li>
+    <li><b>Trace stream SSE.</b> Hanya terisi saat ada worker job.</li>
+    <li><b><code>GET /debug/chaos</code>.</b> Membaca chaos yang sedang aktif. <code>POST /debug/chaos</code> menyalakan atau mematikannya.</li>
+  </ul>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 9 / 12</span></div>
+</section>
+
+<!-- 10. Observability -->
+<section class="slide">
+  <div class="kicker">OBSERVABILITY</div>
+  <h1>Observability: semua proses terlihat</h1>
+  <ul>
+    <li><b>Prometheus + Grafana + Alertmanager.</b> Metrik dan alarm.</li>
+    <li><b>Loki + Promtail.</b> Log terpusat dari semua proses.</li>
+    <li><b>Jaeger (OTLP).</b> Tracing antar proses.</li>
+    <li><b>mongodb-exporter.</b> Metrik MongoDB. <b>Mailpit.</b> Menampung email keluar, termasuk email reset password.</li>
+  </ul>
+  <div class="note" style="margin-top:22px;"><b>Batasan jujur:</b> span aplikasi belum masuk ke Jaeger. Instrumentasi OTEL di Bun butuh span manual.</div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 10 / 12</span></div>
+</section>
+
+<!-- 11. Pengujian + status rilis -->
+<section class="slide">
+  <div class="kicker">PENGUJIAN DAN RILIS</div>
+  <h1>Pengujian dan status rilis</h1>
+  <ul>
+    <li><b>106 unit test API lolos.</b></li>
+    <li>Gates Biome dan TypeScript hijau.</li>
+    <li><b>Load test k6:</b> smoke, browse, war, abuse, soak. Browse p95 di bawah 300 ms.</li>
+    <li>PR API #7 sampai #14 sudah merge ke main. Main API di <code>cc30038</code>.</li>
+  </ul>
+  <div class="note" style="margin-top:22px;"><b>Catatan:</b> stack live berjalan native. Full docker compose belum bisa jalan di VM ini.</div>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 11 / 12</span></div>
+</section>
+
+<!-- 12. Frontend ringkas + penutup -->
+<section class="slide">
+  <div class="kicker">FRONTEND DAN PENUTUP</div>
+  <h1>Frontend ringkas dan penutup</h1>
+  <div class="kv">
+    <h2>Stack</h2>
+    <p>Vite + React 19 + TypeScript, Tailwind v4 + shadcn/ui, TanStack Router + Query.</p>
+  </div>
+  <div class="kv">
+    <h2>Fitur utama</h2>
+    <p>Daftar event dengan infinite scroll, order dengan countdown, tiket + QR, API keys, onboarding tour 5 langkah.</p>
+  </div>
+  <div class="kv">
+    <h2>Integrasi ke API</h2>
+    <p>Client hasil generate dari OpenAPI (26 path, 39 schema), SSE untuk status order dan stok, Idempotency-Key di mutasi order dan pay.</p>
+  </div>
+  <div class="kv">
+    <h2>Live</h2>
+    <p>Web: http://bore.pub:54812 &middot; API: http://bore.pub:50430</p>
+  </div>
+  <p class="lede">Itu ringkasan arsitektur backend TixWar per 21 November 2026.</p>
+  <div class="footer"><span>TixWar &middot; Pitch Deck Arsitektur Backend</span><span>21 November 2026 &middot; 12 / 12</span></div>
+</section>
+
+</body>
+</html>
