@@ -131,7 +131,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     min-height: 100dvh;
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-family:
+      "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   }
   input,
   textarea,

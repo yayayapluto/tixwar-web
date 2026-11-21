@@ -10,7 +10,8 @@ payment countdown. The UI should make that race legible, not decorate it.
 - **One urgency token:** `destructive` is reserved for live-sale urgency —
   low stock, a sale ending in under an hour, an order expiring in under a
   minute. It is never used for decoration.
-- **Type:** system sans stack. Page titles `text-2xl font-semibold`, card
+- **Type:** Plus Jakarta Sans Variable (self-hosted via Fontsource, weight
+  200–800), system sans fallback. Page titles `text-2xl font-semibold`, card
   titles `text-base`, body `text-sm`, metadata `text-xs text-muted-foreground`.
 - **Motion:** fast and functional only — 150–200ms `ease-out` entrances,
   `active:scale-[0.97–0.98]` press feedback, `--ease-drawer` for the sheet.

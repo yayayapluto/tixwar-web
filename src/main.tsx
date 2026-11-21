@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { ListSkeleton } from '@/components/status'
 import { routeTree } from './routeTree.gen'
 import '@/lib/api'
+import '@fontsource-variable/plus-jakarta-sans'
 import './index.css'
 
 const router = createRouter({
