@@ -5,11 +5,16 @@ payment countdown. The UI should make that race legible, not decorate it.
 
 ## Identity
 
-- **Neutrals:** zinc shadcn tokens only (`--background`, `--card`, `--muted`,
-  `--primary`). No brand color, no gradients, no glow, no background grids.
-- **One urgency token:** `destructive` is reserved for live-sale urgency —
-  low stock, a sale ending in under an hour, an order expiring in under a
-  minute. It is never used for decoration.
+- **Palette:** shadcn preset `b3kJnBDtY` (Style Nova, Base Color Mist,
+  Theme Green, Chart Orange, Radius 0.625rem). Neutrals are mist-tinted
+  (`--background`, `--card`, `--muted`); `--primary` is green (light
+  `oklch(0.527 0.154 150.069)`, dark `oklch(0.448 0.119 151.328)`); chart
+  tokens (`--chart-1`–`--chart-5`) are orange. No gradients, no glow, no
+  background grids.
+- **One urgency token:** `destructive` (red) is reserved for live-sale
+  urgency — low stock, a sale ending in under an hour, an order expiring
+  in under a minute. It stays distinct from the green primary and is never
+  used for decoration.
 - **Type:** Plus Jakarta Sans Variable (self-hosted via Fontsource, weight
   200–800), system sans fallback. Page titles `text-2xl font-semibold`, card
   titles `text-base`, body `text-sm`, metadata `text-xs text-muted-foreground`.
@@ -36,7 +41,7 @@ and offer the next action.
 
 ## What not to do
 
-- Do not add a brand palette, hero, or marketing section.
+- Do not add a hero or marketing section, or colors beyond the preset palette.
 - Do not add glassmorphism beyond the floating bottom bar.
 - Do not animate for decoration; every animation must pass the
   frequency/purpose/speed/function gate.
