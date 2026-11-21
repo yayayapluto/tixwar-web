@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { OrdersGridSkeleton, OrdersPageSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
@@ -20,10 +20,19 @@ import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
+type OrdersSearch = {
+  status?: string
+}
+
 export const Route = createFileRoute('/orders/')({
   beforeLoad: ({ location }) => {
     requireCustomer(location.href)
   },
+  // The status filter lives in the URL so back and refresh restore the
+  // list instead of resetting it to All (same pattern as /events).
+  validateSearch: (search: Record<string, unknown>): OrdersSearch => ({
+    status: typeof search.status === 'string' ? search.status : '',
+  }),
   component: OrdersPage,
   pendingComponent: OrdersPageSkeleton,
 })
@@ -53,7 +62,7 @@ function OrderCard({ order }: { order: Order }) {
     <Card className="transition-[border-color] duration-150 ease-out hover:border-ring">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="min-w-0 flex-1 truncate">
+          <CardTitle className="min-w-0 flex-1 truncate leading-snug">
             <Link
               to="/orders/$orderId"
               params={{ orderId: order.id }}
@@ -84,8 +93,14 @@ function OrderCard({ order }: { order: Order }) {
             text only, never the card height — and when the refetch flips the
             status to EXPIRED the slot stays as a blank line instead of
             collapsing. */}
+        {/* The ticking line is role="timer" with no aria-live: a polite
+            live region here would announce every second on every pending
+            card at once. Announcements happen only at thresholds, via the
+            visually hidden status line below — its text changes only when
+            the order crosses 60s or expires, so a screen reader hears at
+            most two announcements per card. */}
         <p
-          aria-live="polite"
+          role="timer"
           className={
             order.status === 'PENDING_PAYMENT' && secondsLeft !== null && secondsLeft < 60
               ? 'min-h-5 font-medium tabular-nums text-destructive'
@@ -98,11 +113,21 @@ function OrderCard({ order }: { order: Order }) {
               : `Expires in ${formatCountdown(secondsLeft)}`
             : ' '}
         </p>
+        <p role="status" className="sr-only">
+          {order.status === 'PENDING_PAYMENT' && secondsLeft !== null
+            ? secondsLeft === 0
+              ? 'This order has expired.'
+              : secondsLeft <= 60
+                ? 'Less than a minute left to pay.'
+                : ''
+            : ''}
+        </p>
       </CardContent>
-      {/* Footer slot is always rendered: a pay button for payable orders, an
-          empty h-11 reserve otherwise. Every card keeps the same height, so a
-          card flipping PENDING_PAYMENT -> EXPIRED (footer unmounts) cannot
-          shift the cards below it. */}
+      {/* Footer slot is always rendered: a pay button for payable orders, a
+          "Buy again" action for expired or cancelled orders, an empty h-11
+          reserve otherwise. Every card keeps the same height, so a card
+          flipping PENDING_PAYMENT -> EXPIRED (pay button swaps for the
+          buy-again button) cannot shift the cards below it. */}
       <CardFooter>
         {payAction ? (
           <Link
@@ -111,8 +136,16 @@ function OrderCard({ order }: { order: Order }) {
             className={buttonVariants({ className: 'w-full' })}
           >
             {order.status === 'PAYMENT_FAILED'
-              ? `Retry payment · ${formatCurrency(order.total)}`
-              : `Pay ${formatCurrency(order.total)}`}
+              ? `Continue to retry payment · ${formatCurrency(order.total)}`
+              : `Continue to pay · ${formatCurrency(order.total)}`}
+          </Link>
+        ) : order.status === 'EXPIRED' || order.status === 'CANCELLED' ? (
+          <Link
+            to="/events/$eventId"
+            params={{ eventId: order.eventId }}
+            className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+          >
+            Buy again
           </Link>
         ) : (
           <div aria-hidden="true" className="h-11 w-full" />
@@ -123,8 +156,17 @@ function OrderCard({ order }: { order: Order }) {
 }
 
 function OrdersPage() {
-  const [status, setStatus] = useState('')
+  const search = Route.useSearch()
+  const navigate = useNavigate()
+  const status = search.status ?? ''
   const query = useOrders(status ? (status as OrderStatus) : undefined)
+
+  // Filter changes replace the current history entry so they do not spam
+  // the back stack; the URL still carries the filter, so back from detail
+  // and refresh restore it.
+  const updateStatus = (value: string) => {
+    navigate({ to: '/orders', search: (prev) => ({ ...prev, status: value }), replace: true })
+  }
 
   // Pending orders that expire soonest first, so the order most at risk is
   // the one the user sees first; everything else keeps the API order.
@@ -138,6 +180,19 @@ function OrdersPage() {
         return 0
       })
     : []
+  // The pending-first sort is invisible without a heading, so at-risk
+  // orders get their own labelled section; the rest only get a heading
+  // when there is a split to explain, otherwise the list stays as it was.
+  const atRisk = orders.filter((o) => o.status === 'PENDING_PAYMENT')
+  const rest = orders.filter((o) => o.status !== 'PENDING_PAYMENT')
+  const split = atRisk.length > 0 && rest.length > 0
+  const restGrid = (
+    <div className="grid gap-3">
+      {rest.map((order) => (
+        <OrderCard key={order.id} order={order} />
+      ))}
+    </div>
+  )
 
   return (
     <div className="space-y-4">
@@ -145,7 +200,7 @@ function OrdersPage() {
         <h1 className="min-w-0 text-2xl font-semibold">My orders</h1>
         <Select
           value={status === '' ? 'all' : status}
-          onValueChange={(v) => setStatus(v === 'all' ? '' : v)}
+          onValueChange={(v) => updateStatus(v === 'all' ? '' : v)}
         >
           <SelectTrigger aria-label="Filter by status" className="w-full sm:w-44">
             <SelectValue placeholder="All statuses" />
@@ -173,7 +228,7 @@ function OrdersPage() {
             title="No orders with this status."
             description="Try a different filter."
             action={
-              <Button variant="outline" size="sm" onClick={() => setStatus('')}>
+              <Button variant="outline" size="sm" onClick={() => updateStatus('')}>
                 Clear filter
               </Button>
             }
@@ -194,10 +249,35 @@ function OrdersPage() {
           />
         )
       ) : (
-        <div className="grid gap-3">
-          {orders.map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
+        <div className="space-y-4">
+          {atRisk.length > 0 && (
+            <section aria-labelledby="needs-payment-heading" className="space-y-3">
+              <div className="space-y-1">
+                <h2 id="needs-payment-heading" className="text-base font-semibold">
+                  Needs payment — soonest first
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Pay before the countdown ends or the tickets are released.
+                </p>
+              </div>
+              <div className="grid gap-3">
+                {atRisk.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            </section>
+          )}
+          {rest.length > 0 &&
+            (split ? (
+              <section aria-labelledby="other-orders-heading" className="space-y-3">
+                <h2 id="other-orders-heading" className="text-base font-semibold">
+                  Other orders
+                </h2>
+                {restGrid}
+              </section>
+            ) : (
+              restGrid
+            ))}
         </div>
       )}
     </div>

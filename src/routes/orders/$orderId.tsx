@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { OrderDetailSkeleton } from '@/components/skeletons'
 import { ErrorState } from '@/components/status'
@@ -23,6 +24,7 @@ import { useEvent } from '@/features/events/queries'
 import { useCancelOrder, useOrder } from '@/features/orders/queries'
 import { useOrderStream } from '@/features/realtime/use-order-stream'
 import { postV1OrdersByIdPay } from '@/lib/client'
+import { ApiError } from '@/lib/errors'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { toast } from '@/lib/toast'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
@@ -46,6 +48,11 @@ function OrderDetailPage() {
 
   const secondsLeft = useCountdown(query.data?.data.order.expiresAt)
   const order = query.data?.data.order
+  // Set when a pay attempt fails without a user-facing signal: the global
+  // MutationCache.onError only toasts 4xx, so a 5xx or a dropped connection
+  // would otherwise leave the button silently re-enabled with no word on
+  // whether the user was charged. Cleared when a new attempt starts.
+  const [payError, setPayError] = useState(false)
 
   // The pay mutation lives here instead of usePayOrder so the idempotency key
   // can be stable per payment attempt. The key is derived from the order id
@@ -67,11 +74,22 @@ function OrderDetailPage() {
       })
       return res.data.data
     },
+    onMutate: () => {
+      setPayError(false)
+    },
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['order', id] })
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
       toast('Payment started', { variant: 'success' })
+    },
+    onError: (error) => {
+      // 4xx faults already get a toast from the global MutationCache.onError;
+      // only 5xx and network failures (ApiError status 0) need the inline
+      // message, so a user fault is never reported twice.
+      if (!(error instanceof ApiError && error.status >= 400 && error.status < 500)) {
+        setPayError(true)
+      }
     },
   })
 
@@ -86,6 +104,10 @@ function OrderDetailPage() {
   // the badge can still say "Waiting for payment" past the deadline.
   const locallyExpired = payable && secondsLeft === 0
   const expired = order.status === 'EXPIRED' || locallyExpired
+  // The badge follows the same clock the timer does: once the local clock
+  // declares expiry it must read "Expired", not keep the amber
+  // "Waiting for payment" while the timer already says "Expired".
+  const displayStatus = expired ? 'EXPIRED' : order.status
   const countdownSeconds =
     secondsLeft !== null && secondsLeft > 0 && (payable || order.status === 'PAYMENT_QUEUED')
       ? secondsLeft
@@ -113,8 +135,8 @@ function OrderDetailPage() {
 
       <div className="flex items-start justify-between gap-2">
         <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold">{event?.name ?? 'Order'}</h1>
-        <Badge variant={ORDER_STATUS_VARIANT[order.status] ?? 'secondary'} className="shrink-0">
-          {STATUS_LABEL[order.status] ?? order.status}
+        <Badge variant={ORDER_STATUS_VARIANT[displayStatus] ?? 'secondary'} className="shrink-0">
+          {STATUS_LABEL[displayStatus] ?? displayStatus}
         </Badge>
       </div>
 
@@ -123,35 +145,48 @@ function OrderDetailPage() {
           <CardTitle className="text-base">Order summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
-          {showCountdown && (
+          {order.status === 'PAID' ? (
+            // PAID occupies the countdown slot with the same three-line shape
+            // (label, large line, muted line) so the card keeps its height
+            // when the countdown unmounts at the moment of success.
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Time left to pay</p>
-              {/* The timer line never unmounts: at 0 it reads "Expired" in the
-                  same text-3xl tabular-nums line, so the second -> "Expired"
-                  transition and the <60s colour change move no element. */}
-              <p
-                role="timer"
-                className={
-                  urgent || timerExpired
-                    ? 'text-3xl font-semibold tabular-nums whitespace-nowrap text-destructive'
-                    : 'text-3xl font-semibold tabular-nums whitespace-nowrap'
-                }
-              >
-                {countdownSeconds !== null ? formatCountdown(countdownSeconds) : 'Expired'}
-              </p>
-              {/* Warning line is always rendered (invisible when not urgent):
-                  it wraps to two lines on narrow screens, and rendering the
-                  same text in both states keeps its height identical, so
-                  crossing the 60s threshold cannot push the summary down. */}
-              <p
-                aria-hidden={!urgent}
-                className={
-                  urgent ? 'font-medium text-destructive' : 'invisible font-medium text-destructive'
-                }
-              >
-                Less than a minute left — pay now or the tickets are released.
-              </p>
+              <p className="text-xs text-muted-foreground">Payment status</p>
+              <p className="text-2xl font-semibold whitespace-nowrap">Payment received</p>
+              <p className="text-sm text-muted-foreground">Paid {formatCurrency(order.total)}</p>
             </div>
+          ) : (
+            showCountdown && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Time left to pay</p>
+                {/* The timer line never unmounts: at 0 it reads "Expired" in the
+                    same text-3xl tabular-nums line, so the second -> "Expired"
+                    transition and the <60s colour change move no element. */}
+                <p
+                  role="timer"
+                  className={
+                    urgent || timerExpired
+                      ? 'text-3xl font-semibold tabular-nums whitespace-nowrap text-destructive'
+                      : 'text-3xl font-semibold tabular-nums whitespace-nowrap'
+                  }
+                >
+                  {countdownSeconds !== null ? formatCountdown(countdownSeconds) : 'Expired'}
+                </p>
+                {/* Warning line is always rendered (invisible when not urgent):
+                    it wraps to two lines on narrow screens, and rendering the
+                    same text in both states keeps its height identical, so
+                    crossing the 60s threshold cannot push the summary down. */}
+                <p
+                  aria-hidden={!urgent}
+                  className={
+                    urgent
+                      ? 'font-medium text-destructive'
+                      : 'invisible font-medium text-destructive'
+                  }
+                >
+                  Less than a minute left — pay now or the tickets are released.
+                </p>
+              </div>
+            )
           )}
           <div className="space-y-1">
             {/* Single line: truncate keeps the height fixed when the event
@@ -208,24 +243,56 @@ function OrderDetailPage() {
 
       <div className="space-y-2">
         {payable && !expired ? (
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={() => pay.mutate({ id: order.id, key: payKey })}
-            disabled={payDisabled}
-          >
-            {pay.isPending
-              ? 'Paying…'
-              : queued
-                ? 'Payment processing…'
-                : order.status === 'PAYMENT_FAILED'
-                  ? `Retry payment · ${formatCurrency(order.total)}`
-                  : `Pay ${formatCurrency(order.total)}`}
-          </Button>
+          <>
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => pay.mutate({ id: order.id, key: payKey })}
+              disabled={payDisabled}
+            >
+              {pay.isPending
+                ? 'Paying…'
+                : queued
+                  ? 'Payment processing…'
+                  : order.status === 'PAYMENT_FAILED'
+                    ? `Retry payment · ${formatCurrency(order.total)}`
+                    : `Pay ${formatCurrency(order.total)}`}
+            </Button>
+            {payError && (
+              <p role="alert" className="text-sm text-destructive">
+                Payment didn&apos;t go through — you haven&apos;t been charged. Try again.
+              </p>
+            )}
+            {order.status === 'PAYMENT_FAILED' && !payError && (
+              <p className="text-sm text-muted-foreground">
+                Payment didn&apos;t go through. You haven&apos;t been charged.
+              </p>
+            )}
+            <p className="text-center text-xs text-muted-foreground">
+              One tap — retrying never charges you twice.
+            </p>
+          </>
+        ) : order.status === 'PAID' ? (
+          // PAID as a bordered status card in the CONFIRMED/expired pattern,
+          // occupying the button slot: min-h-124px matches the QUEUED area
+          // exactly (48 Pay slot + 8 gap + 16 reassurance line + 8 gap + 44
+          // Cancel button), so the QUEUED -> PAID flip moves nothing.
+          <div role="status" className="flex min-h-[124px] items-center rounded-lg border p-4">
+            <p className="text-sm text-muted-foreground">
+              Your tickets are being prepared — they&apos;ll appear under Tickets once confirmed.
+            </p>
+          </div>
         ) : cancelable && !expired ? (
-          // Reserve the Pay button's h-12 slot while PAYMENT_QUEUED so the
-          // Cancel button below keeps its position when Pay unmounts.
-          <div aria-hidden="true" className="h-12 w-full" />
+          <>
+            {/* Reserve the Pay button's h-12 slot while PAYMENT_QUEUED so the
+                Cancel button below keeps its position when Pay unmounts. */}
+            <div aria-hidden="true" className="h-12 w-full" />
+            {/* Invisible twin of the reassurance line, so Cancel keeps its
+                position across the payable -> QUEUED transition. */}
+            <p aria-hidden="true" className="invisible text-center text-xs text-muted-foreground">
+              One tap — retrying never charges you twice.
+            </p>
+          </>
         ) : null}
         {cancelable && !expired && (
           <AlertDialog>
@@ -296,12 +363,6 @@ function OrderDetailPage() {
             View tickets
           </Link>
         </div>
-      )}
-
-      {order.status === 'PAID' && (
-        <p role="status" className="text-sm text-muted-foreground">
-          Payment received — your tickets are being prepared.
-        </p>
       )}
 
       {order.status === 'CANCELLED' && (
