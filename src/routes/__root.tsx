@@ -227,7 +227,13 @@ function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggle}
+            onClick={(e) => {
+              // The wipe spreads from the button's center; reading the rect
+              // (instead of the click point) keeps it centered for keyboard
+              // activation too, where the click has no coordinates.
+              const rect = e.currentTarget.getBoundingClientRect()
+              toggle({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+            }}
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           >
             {theme === 'dark' ? (

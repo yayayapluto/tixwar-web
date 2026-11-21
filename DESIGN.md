@@ -21,7 +21,10 @@ payment countdown. The UI should make that race legible, not decorate it.
 - **Motion:** fast and functional only — 150–200ms `ease-out` entrances,
   `active:scale-[0.97–0.98]` press feedback, `--ease-drawer` for the sheet.
   No route transitions, no staggered lists, no motion on data the user reads
-  (counts, prices, countdown ticks).
+  (counts, prices, countdown ticks). Theme change is the exception: a 500ms
+  circular wipe spreading from the toggle button (View Transitions API),
+  falling back to a 300ms color fade; both off under
+  `prefers-reduced-motion`.
 
 ## Focal point per screen
 
