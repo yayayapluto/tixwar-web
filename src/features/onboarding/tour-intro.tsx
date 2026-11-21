@@ -38,7 +38,9 @@ export function TourIntro({ onStart, onSkip }: TourIntroProps) {
       aria-labelledby="tour-intro-title"
       className="fixed inset-0 z-[90] flex items-center justify-center p-4"
     >
-      <div aria-hidden="true" onClick={onSkip} className="absolute inset-0 bg-black/65" />
+      {/* The backdrop only dims the page now: clicking outside the box must
+          not dismiss the onboarding, only Skip (or Escape) ends it. */}
+      <div aria-hidden="true" className="absolute inset-0 bg-black/80" />
       <Card
         className={cn(
           'relative w-80',

@@ -146,7 +146,9 @@ export function TourOverlay({ stepIndex, onNext, onBack, onSkip }: TourOverlayPr
     >
       {rect && (
         <>
-          <svg className="absolute inset-0 h-full w-full" onClick={onSkip} aria-hidden="true">
+          {/* The backdrop only dims the page: clicking outside the spotlight
+              must not dismiss the tour, only Skip, Finish (or Escape) ends it. */}
+          <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
             <defs>
               <mask id="tour-spotlight-mask">
                 <rect width="100%" height="100%" fill="white" />
@@ -165,7 +167,7 @@ export function TourOverlay({ stepIndex, onNext, onBack, onSkip }: TourOverlayPr
               width="100%"
               height="100%"
               fill="black"
-              fillOpacity={0.65}
+              fillOpacity={0.8}
               mask="url(#tour-spotlight-mask)"
             />
             <rect
