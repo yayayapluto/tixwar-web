@@ -87,6 +87,9 @@ function ApiKeyRow({
         </p>
         <p className="font-mono text-xs text-muted-foreground">{apiKey.prefix}…</p>
         <p className="text-xs text-muted-foreground">Created {formatDate(apiKey.createdAt)}</p>
+        <p className="text-xs text-muted-foreground">
+          {apiKey.lastUsedAt ? `Last used ${formatDate(apiKey.lastUsedAt)}` : 'Never used'}
+        </p>
         {apiKey.expiresAt && (
           <p className="text-xs text-muted-foreground">
             {isExpired ? 'Expired' : 'Expires'} {formatDate(apiKey.expiresAt)}
