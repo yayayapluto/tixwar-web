@@ -14,6 +14,13 @@ export interface components {
     "RefreshRequest": {
       "refreshToken": string;
     };
+    "ForgotPasswordRequest": {
+      "email": string;
+    };
+    "ResetPasswordRequest": {
+      "token": string;
+      "password": string;
+    };
     "CreateEventRequest": {
       "name": string;
       "description"?: string;
@@ -65,6 +72,7 @@ export interface components {
     };
     "CreateApiKeyRequest": {
       "name": string;
+      "expiresAt"?: string;
     };
     "DebugLoadRequest": {
       "scenario": "single" | "crowd" | "abuse";
@@ -128,6 +136,9 @@ export interface components {
       "tokenType": "Bearer";
       "expiresIn": number;
     };
+    "MessageResult": {
+      "message": string;
+    };
     "Event": {
       "id": string;
       "name": string;
@@ -160,7 +171,27 @@ export interface components {
           "saleStartsAt": string;
           "saleEndsAt": string;
           "maxPerUser": number;
+          "sold": number;
+          "remaining": number;
         }>;
+    };
+    "EventListItem": {
+      "id": string;
+      "name": string;
+      "description": string;
+      "category": string;
+      "city": string;
+      "venue": string;
+      "startsAt": string;
+      "status": "DRAFT" | "SCHEDULED" | "ON_SALE" | "SOLD_OUT" | "ENDED";
+      "createdAt": string;
+      "updatedAt": string;
+      "minPrice": number | null;
+      "maxPrice": number | null;
+      "saleEndsAt": string | null;
+      "totalQuota": number;
+      "totalSold": number;
+      "remaining": number;
     };
     "TicketTier": {
       "id": string;
@@ -171,6 +202,8 @@ export interface components {
       "saleStartsAt": string;
       "saleEndsAt": string;
       "maxPerUser": number;
+      "sold": number;
+      "remaining": number;
     };
     "EventCreateResult": {
       "id": string;
@@ -283,6 +316,8 @@ export interface components {
       "active": boolean;
       "createdAt": string;
       "revokedAt": string | null;
+      "expiresAt": string | null;
+      "lastUsedAt": string | null;
     };
     "ApiKeyCreated": {
       "id": string;
@@ -290,6 +325,8 @@ export interface components {
       "prefix": string;
       "apiKey": string;
       "keyShownOnce": true;
+      "expiresAt": string | null;
+      "lastUsedAt": string | null;
     };
     "WebhookEndpoint": {
       "id": string;
@@ -312,6 +349,14 @@ export interface components {
       "action": "fail" | "latency" | "recover" | "failure-rate" | "slow";
       "applied": boolean;
       "detail": Record<string, unknown>;
+    };
+    "ChaosStateOverview": {
+      "targets": Array<{
+          "target": "redis" | "mongo" | "worker" | "gateway";
+          "active": boolean;
+          "action": "fail" | "latency" | null;
+          "detail": Record<string, unknown>;
+        }>;
     };
   };
 }
@@ -373,6 +418,35 @@ export interface paths {
       };
     };
   };
+  "/v1/auth/forgot-password": {
+    post: {
+      requestBody: components["schemas"]["ForgotPasswordRequest"];
+      responses: {
+        "200": {
+          "data": components["schemas"]["MessageResult"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "400": components["schemas"]["Problem"];
+        "429": components["schemas"]["Problem"];
+      };
+    };
+  };
+  "/v1/auth/reset-password": {
+    post: {
+      requestBody: components["schemas"]["ResetPasswordRequest"];
+      responses: {
+        "200": {
+          "data": components["schemas"]["MessageResult"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "400": components["schemas"]["Problem"];
+        "401": components["schemas"]["Problem"];
+        "429": components["schemas"]["Problem"];
+      };
+    };
+  };
   "/v1/api-keys": {
     post: {
       requestBody: components["schemas"]["CreateApiKeyRequest"];
@@ -411,7 +485,7 @@ export interface paths {
     get: {
       responses: {
         "200": {
-          "data": Array<components["schemas"]["Event"]>;
+          "data": Array<components["schemas"]["EventListItem"]>;
           "meta": components["schemas"]["Meta"];
           "links": components["schemas"]["Links"];
         };
@@ -698,6 +772,17 @@ export interface paths {
     };
   };
   "/debug/chaos": {
+    get: {
+      responses: {
+        "200": {
+          "data": components["schemas"]["ChaosStateOverview"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "401": components["schemas"]["Problem"];
+        "403": components["schemas"]["Problem"];
+      };
+    };
     post: {
       requestBody: components["schemas"]["DebugChaosRequest"];
       responses: {

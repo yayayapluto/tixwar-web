@@ -18,6 +18,15 @@ export type RefreshRequest = {
     refreshToken: string;
 };
 
+export type ForgotPasswordRequest = {
+    email: string;
+};
+
+export type ResetPasswordRequest = {
+    token: string;
+    password: string;
+};
+
 export type CreateEventRequest = {
     name: string;
     description?: string;
@@ -77,6 +86,7 @@ export type CreateWebhookRequest = {
 
 export type CreateApiKeyRequest = {
     name: string;
+    expiresAt?: string;
 };
 
 export type DebugLoadRequest = {
@@ -149,6 +159,10 @@ export type RefreshResult = {
     expiresIn: number;
 };
 
+export type MessageResult = {
+    message: string;
+};
+
 export type Event = {
     id: string;
     name: string;
@@ -182,7 +196,28 @@ export type EventDetail = {
         saleStartsAt: string;
         saleEndsAt: string;
         maxPerUser: number;
+        sold: number;
+        remaining: number;
     }>;
+};
+
+export type EventListItem = {
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    city: string;
+    venue: string;
+    startsAt: string;
+    status: 'DRAFT' | 'SCHEDULED' | 'ON_SALE' | 'SOLD_OUT' | 'ENDED';
+    createdAt: string;
+    updatedAt: string;
+    minPrice: number | null;
+    maxPrice: number | null;
+    saleEndsAt: string | null;
+    totalQuota: number;
+    totalSold: number;
+    remaining: number;
 };
 
 export type TicketTier = {
@@ -194,6 +229,8 @@ export type TicketTier = {
     saleStartsAt: string;
     saleEndsAt: string;
     maxPerUser: number;
+    sold: number;
+    remaining: number;
 };
 
 export type EventCreateResult = {
@@ -318,6 +355,8 @@ export type ApiKey = {
     active: boolean;
     createdAt: string;
     revokedAt: string | null;
+    expiresAt: string | null;
+    lastUsedAt: string | null;
 };
 
 export type ApiKeyCreated = {
@@ -326,6 +365,8 @@ export type ApiKeyCreated = {
     prefix: string;
     apiKey: string;
     keyShownOnce: true;
+    expiresAt: string | null;
+    lastUsedAt: string | null;
 };
 
 export type WebhookEndpoint = {
@@ -353,6 +394,17 @@ export type ChaosState = {
     detail: {
         [key: string]: unknown;
     };
+};
+
+export type ChaosStateOverview = {
+    targets: Array<{
+        target: 'redis' | 'mongo' | 'worker' | 'gateway';
+        active: boolean;
+        action: 'fail' | 'latency';
+        detail: {
+            [key: string]: unknown;
+        };
+    }>;
 };
 
 export type PostV1AuthRegisterData = {
@@ -491,6 +543,76 @@ export type PostV1AuthLogoutResponses = {
 
 export type PostV1AuthLogoutResponse = PostV1AuthLogoutResponses[keyof PostV1AuthLogoutResponses];
 
+export type PostV1AuthForgotPasswordData = {
+    body: ForgotPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/auth/forgot-password';
+};
+
+export type PostV1AuthForgotPasswordErrors = {
+    /**
+     * RFC 7807 problem response (400)
+     */
+    400: Problem;
+    /**
+     * RFC 7807 problem response (429)
+     */
+    429: Problem;
+};
+
+export type PostV1AuthForgotPasswordError = PostV1AuthForgotPasswordErrors[keyof PostV1AuthForgotPasswordErrors];
+
+export type PostV1AuthForgotPasswordResponses = {
+    /**
+     * Generic confirmation; a link is emailed only if the account exists
+     */
+    200: {
+        data: MessageResult;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type PostV1AuthForgotPasswordResponse = PostV1AuthForgotPasswordResponses[keyof PostV1AuthForgotPasswordResponses];
+
+export type PostV1AuthResetPasswordData = {
+    body: ResetPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/v1/auth/reset-password';
+};
+
+export type PostV1AuthResetPasswordErrors = {
+    /**
+     * RFC 7807 problem response (400)
+     */
+    400: Problem;
+    /**
+     * RFC 7807 problem response (401)
+     */
+    401: Problem;
+    /**
+     * RFC 7807 problem response (429)
+     */
+    429: Problem;
+};
+
+export type PostV1AuthResetPasswordError = PostV1AuthResetPasswordErrors[keyof PostV1AuthResetPasswordErrors];
+
+export type PostV1AuthResetPasswordResponses = {
+    /**
+     * Password reset; all sessions revoked
+     */
+    200: {
+        data: MessageResult;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type PostV1AuthResetPasswordResponse = PostV1AuthResetPasswordResponses[keyof PostV1AuthResetPasswordResponses];
+
 export type GetV1ApiKeysData = {
     body?: never;
     path?: never;
@@ -604,9 +726,9 @@ export type GetV1EventsData = {
         price_min?: number;
         price_max?: number;
         /**
-         * Allowlist: startsAt, name, createdAt, updatedAt; prefix with - for desc
+         * ending: saleEndsAt ascending, nulls last, tiebreak startsAt; date: startsAt ascending; price-asc: minPrice ascending, nulls last; price-desc: minPrice descending, nulls last
          */
-        sort?: string;
+        sort?: 'ending' | 'date' | 'price-asc' | 'price-desc';
         /**
          * Allowlist projection
          */
@@ -640,7 +762,7 @@ export type GetV1EventsResponses = {
      * Event list
      */
     200: {
-        data: Array<Event>;
+        data: Array<EventListItem>;
         meta: Meta;
         links: Links;
     };
@@ -1440,6 +1562,39 @@ export type PostDebugLoadResponses = {
      */
     200: unknown;
 };
+
+export type GetDebugChaosData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/debug/chaos';
+};
+
+export type GetDebugChaosErrors = {
+    /**
+     * RFC 7807 problem response (401)
+     */
+    401: Problem;
+    /**
+     * RFC 7807 problem response (403)
+     */
+    403: Problem;
+};
+
+export type GetDebugChaosError = GetDebugChaosErrors[keyof GetDebugChaosErrors];
+
+export type GetDebugChaosResponses = {
+    /**
+     * Chaos state overview
+     */
+    200: {
+        data: ChaosStateOverview;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type GetDebugChaosResponse = GetDebugChaosResponses[keyof GetDebugChaosResponses];
 
 export type PostDebugChaosData = {
     body: DebugChaosRequest;

@@ -10,20 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ApiKeysIndexRouteImport } from './routes/api-keys/index'
 import { Route as DebugStreamRouteImport } from './routes/debug/stream'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as EventsEventIdRouteImport } from './routes/events/$eventId'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as TicketsIndexRouteImport } from './routes/tickets/index'
 import { Route as TicketsTicketIdRouteImport } from './routes/tickets/$ticketId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -34,6 +42,11 @@ const LoginRoute = LoginRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiKeysIndexRoute = ApiKeysIndexRouteImport.update({
@@ -66,6 +79,11 @@ const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TicketsIndexRoute = TicketsIndexRouteImport.update({
   id: '/tickets/',
   path: '/tickets/',
@@ -79,8 +97,10 @@ const TicketsTicketIdRoute = TicketsTicketIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/debug/stream': typeof DebugStreamRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
@@ -88,12 +108,15 @@ export interface FileRoutesByFullPath {
   '/api-keys/': typeof ApiKeysIndexRoute
   '/events/': typeof EventsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/tickets/': typeof TicketsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/debug/stream': typeof DebugStreamRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
@@ -101,13 +124,16 @@ export interface FileRoutesByTo {
   '/api-keys': typeof ApiKeysIndexRoute
   '/events': typeof EventsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/tickets': typeof TicketsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/debug/stream': typeof DebugStreamRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
@@ -115,14 +141,17 @@ export interface FileRoutesById {
   '/api-keys/': typeof ApiKeysIndexRoute
   '/events/': typeof EventsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/tickets/': typeof TicketsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/debug/stream'
     | '/events/$eventId'
     | '/orders/$orderId'
@@ -130,12 +159,15 @@ export interface FileRouteTypes {
     | '/api-keys/'
     | '/events/'
     | '/orders/'
+    | '/settings/'
     | '/tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/debug/stream'
     | '/events/$eventId'
     | '/orders/$orderId'
@@ -143,12 +175,15 @@ export interface FileRouteTypes {
     | '/api-keys'
     | '/events'
     | '/orders'
+    | '/settings'
     | '/tickets'
   id:
     | '__root__'
     | '/'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/debug/stream'
     | '/events/$eventId'
     | '/orders/$orderId'
@@ -156,13 +191,16 @@ export interface FileRouteTypes {
     | '/api-keys/'
     | '/events/'
     | '/orders/'
+    | '/settings/'
     | '/tickets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   DebugStreamRoute: typeof DebugStreamRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
@@ -170,6 +208,7 @@ export interface RootRouteChildren {
   ApiKeysIndexRoute: typeof ApiKeysIndexRoute
   EventsIndexRoute: typeof EventsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   TicketsIndexRoute: typeof TicketsIndexRoute
 }
 
@@ -180,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -194,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api-keys/': {
@@ -238,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tickets/': {
       id: '/tickets/'
       path: '/tickets'
@@ -257,8 +317,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   DebugStreamRoute: DebugStreamRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
@@ -266,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeysIndexRoute: ApiKeysIndexRoute,
   EventsIndexRoute: EventsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   TicketsIndexRoute: TicketsIndexRoute,
 }
 export const routeTree = rootRouteImport

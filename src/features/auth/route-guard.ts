@@ -16,3 +16,11 @@ export function requireAdmin() {
   }
   return session
 }
+
+export function requireCustomer(redirectTo?: string) {
+  const session = requireAuth(redirectTo)
+  if (session.user.role === 'admin') {
+    throw redirect({ to: '/' })
+  }
+  return session
+}
