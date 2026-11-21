@@ -36,7 +36,7 @@ function LoginPage() {
       <Card>
         <CardHeader>
           <CardTitle>Log in</CardTitle>
-          <CardDescription>
+          <CardDescription className="min-h-10">
             {redirectTo ? (
               <>Log in to continue to {redirectLabel(redirectTo)}. New here? </>
             ) : (

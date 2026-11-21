@@ -59,18 +59,20 @@ function RegisterPage() {
               )
             }
           />
-          {emailTaken && (
-            <p className="pt-4 text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                search={redirectTo ? { redirect: redirectTo } : undefined}
-                className="underline underline-offset-4"
-              >
-                Log in instead
-              </Link>
-            </p>
-          )}
+          <div className="min-h-9 pt-4 text-center text-sm text-muted-foreground">
+            {emailTaken && (
+              <>
+                Already have an account?{' '}
+                <Link
+                  to="/login"
+                  search={redirectTo ? { redirect: redirectTo } : undefined}
+                  className="underline underline-offset-4"
+                >
+                  Log in instead
+                </Link>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

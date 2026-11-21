@@ -154,7 +154,7 @@ function TraceRow({ trace }: { trace: Trace }) {
           </Badge>
         )}
         {trace.durationMs !== undefined && (
-          <span className="text-xs text-muted-foreground">{trace.durationMs} ms</span>
+          <span className="text-xs text-muted-foreground tabular-nums">{trace.durationMs} ms</span>
         )}
         {trace.requestId && (
           <span className="min-w-0 truncate text-xs text-muted-foreground" title={trace.requestId}>
@@ -307,33 +307,35 @@ function DebugPage() {
         </p>
       </div>
 
-      {activeChaos && (
-        <div
-          role="status"
-          className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
-        >
-          <p className="text-sm font-medium text-destructive">
-            Chaos active: {chaosSummary(activeChaos)}
-            {activeChaos.autoRecoverMs !== undefined &&
-              ` · recovers automatically after ${Math.round(activeChaos.autoRecoverMs / 1000)}s`}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-auto"
-            onClick={() => applyChaos({ target: activeChaos.target, action: 'recover' })}
-            disabled={chaos.isPending}
+      <div className="min-h-[114px] sm:min-h-[66px]">
+        {activeChaos && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
           >
-            Recover {activeChaos.target}
-          </Button>
-        </div>
-      )}
+            <p className="text-sm font-medium text-destructive tabular-nums">
+              Chaos active: {chaosSummary(activeChaos)}
+              {activeChaos.autoRecoverMs !== undefined &&
+                ` · recovers automatically after ${Math.round(activeChaos.autoRecoverMs / 1000)}s`}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => applyChaos({ target: activeChaos.target, action: 'recover' })}
+              disabled={chaos.isPending}
+            >
+              Recover {activeChaos.target}
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>Trace stream</CardTitle>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="w-32 shrink-0 justify-center">
               <span
                 aria-hidden="true"
                 className={
@@ -352,7 +354,9 @@ function DebugPage() {
                     ? 'Paused'
                     : 'Connecting…'}
             </Badge>
-            <Badge variant="secondary">{totalReceived}</Badge>
+            <Badge variant="secondary" className="min-w-12 shrink-0 justify-center tabular-nums">
+              {totalReceived}
+            </Badge>
             <div className="ml-auto flex items-center gap-2">
               <Button
                 variant="outline"
@@ -365,6 +369,7 @@ function DebugPage() {
               <Button
                 variant={streaming ? 'default' : 'outline'}
                 size="sm"
+                className="w-[7.5rem] justify-center"
                 onClick={toggleStreaming}
               >
                 <Activity className="size-4" aria-hidden="true" />
@@ -372,7 +377,7 @@ function DebugPage() {
               </Button>
             </div>
           </div>
-          <CardDescription>
+          <CardDescription className="min-h-10 tabular-nums">
             {totalReceived > traces.length
               ? `Menampilkan ${traces.length} dari ${totalReceived} trace`
               : `${totalReceived} trace received`}
@@ -404,47 +409,57 @@ function DebugPage() {
             </Select>
           </div>
 
-          {connectionStatus === 'error' && traces.length === 0 ? (
-            <ErrorState error={streamErrorObject} onRetry={retryStream} />
-          ) : connectionStatus === 'error' ? (
-            <div
-              role="alert"
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
-            >
-              <p className="text-sm font-medium text-destructive">
-                Stream disconnected — new traces are not arriving.
-              </p>
-              <Button variant="outline" size="sm" className="ml-auto" onClick={retryStream}>
-                Retry
-              </Button>
-            </div>
-          ) : null}
+          <div className="min-h-[114px] sm:min-h-[66px]">
+            {connectionStatus === 'error' && traces.length > 0 ? (
+              <div
+                role="alert"
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+              >
+                <p className="text-sm font-medium text-destructive">
+                  Stream disconnected — new traces are not arriving.
+                </p>
+                <Button variant="outline" size="sm" className="ml-auto" onClick={retryStream}>
+                  Retry
+                </Button>
+              </div>
+            ) : null}
+          </div>
 
           {traces.length === 0 ? (
-            connectionStatus === 'connecting' ? (
-              <TraceListSkeleton />
+            connectionStatus === 'error' ? (
+              <div className="flex h-[36rem] flex-col justify-center">
+                <ErrorState error={streamErrorObject} onRetry={retryStream} />
+              </div>
+            ) : connectionStatus === 'connecting' ? (
+              <div className="h-[36rem] overflow-hidden">
+                <TraceListSkeleton />
+              </div>
             ) : connectionStatus === 'paused' ? (
-              <EmptyState
-                title="Stream paused"
-                description="Resume the stream to see traces."
-                action={
-                  <Button variant="outline" size="sm" onClick={toggleStreaming}>
-                    Resume stream
-                  </Button>
-                }
-              />
+              <div className="flex h-[36rem] flex-col justify-center">
+                <EmptyState
+                  title="Stream paused"
+                  description="Resume the stream to see traces."
+                  action={
+                    <Button variant="outline" size="sm" onClick={toggleStreaming}>
+                      Resume stream
+                    </Button>
+                  }
+                />
+              </div>
             ) : (
-              <EmptyState
-                title="No traces yet"
-                description="Connected — waiting for traces. Run a load test or wait for traffic."
-              />
+              <div className="flex h-[36rem] flex-col justify-center">
+                <EmptyState
+                  title="No traces yet"
+                  description="Connected — waiting for traces. Run a load test or wait for traffic."
+                />
+              </div>
             )
           ) : (
             <div
               role="log"
               aria-live="off"
               aria-label="Trace stream"
-              className="max-h-[36rem] space-y-1 overflow-y-auto"
+              className="h-[36rem] space-y-1 overflow-y-auto"
             >
               {filteredTraces.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No traces match the filter.</p>
@@ -530,15 +545,17 @@ function DebugPage() {
                 value={chaosForm.value ?? ''}
                 onChange={(e) => setChaosForm((f) => ({ ...f, value: Number(e.target.value) }))}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="min-h-8 text-xs text-muted-foreground">
                 {CHAOS_VALUE_HINT[chaosForm.action].label}
               </p>
             </div>
-            {chaosError && (
-              <p role="alert" className="text-xs text-destructive">
-                {chaosError}
-              </p>
-            )}
+            <div className="min-h-4">
+              {chaosError && (
+                <p role="alert" className="text-xs text-destructive">
+                  {chaosError}
+                </p>
+              )}
+            </div>
             <Button onClick={handleApplyClick} disabled={chaos.isPending} className="w-full">
               {chaos.isPending ? 'Applying…' : 'Apply chaos'}
             </Button>

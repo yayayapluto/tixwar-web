@@ -145,13 +145,15 @@ export function AuthForm({
           </p>
         </div>
       )}
-      {clientError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {clientError}
-        </p>
-      ) : (
-        <AuthFormError error={error} />
-      )}
+      <div className="min-h-10">
+        {clientError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {clientError}
+          </p>
+        ) : (
+          <AuthFormError error={error} />
+        )}
+      </div>
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? 'Loading…' : submitLabel}
       </Button>

@@ -37,47 +37,51 @@ function ForgotPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {sentTo ? (
-            <div className="space-y-4">
-              <p role="status" className="text-sm">
-                Check your inbox — if an account exists for {sentTo}, we&apos;ve sent a reset link.
-                The link expires in 1 hour.
-              </p>
-              <Link
-                to="/login"
-                className={buttonVariants({ variant: 'outline', className: 'w-full' })}
-              >
-                Back to log in
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  inputMode="email"
-                  enterKeyHint="send"
-                  autoComplete="email"
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <AuthFormError error={forgot.error} />
-              <Button type="submit" className="w-full" disabled={forgot.isPending}>
-                {forgot.isPending ? 'Loading…' : 'Send reset link'}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Remembered it?{' '}
-                <Link to="/login" className="underline underline-offset-4">
-                  Log in
+          <div className="min-h-56">
+            {sentTo ? (
+              <div className="space-y-4">
+                <p role="status" className="text-sm">
+                  Check your inbox — if an account exists for {sentTo}, we&apos;ve sent a reset
+                  link. The link expires in 1 hour.
+                </p>
+                <Link
+                  to="/login"
+                  className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+                >
+                  Back to log in
                 </Link>
-              </p>
-            </form>
-          )}
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    inputMode="email"
+                    enterKeyHint="send"
+                    autoComplete="email"
+                    autoFocus
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="min-h-10">
+                  <AuthFormError error={forgot.error} />
+                </div>
+                <Button type="submit" className="w-full" disabled={forgot.isPending}>
+                  {forgot.isPending ? 'Loading…' : 'Send reset link'}
+                </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Remembered it?{' '}
+                  <Link to="/login" className="underline underline-offset-4">
+                    Log in
+                  </Link>
+                </p>
+              </form>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

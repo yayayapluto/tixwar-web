@@ -221,24 +221,28 @@ export function LoadGeneratorForm({
           />
         </div>
       </div>
-      {error && (
-        <p role="alert" className="text-xs text-destructive">
-          {error}
-        </p>
-      )}
+      <div className="min-h-4">
+        {error && (
+          <p role="alert" className="text-xs text-destructive">
+            {error}
+          </p>
+        )}
+      </div>
       <Button onClick={runLoad} disabled={load.isPending} className="w-full">
         <Activity className="size-4" aria-hidden="true" />
         {load.isPending ? 'Running…' : 'Run load'}
       </Button>
-      {lastRun && (
-        <p className="text-xs text-muted-foreground">
-          Last run: {lastRun.scenario} · {lastRun.requests} requests · concurrency{' '}
-          {lastRun.concurrency}
-          {lastRun.summary
-            ? ` · ${lastRun.summary.succeeded} succeeded, ${lastRun.summary.failed} failed · ${Math.round(lastRun.summary.requestsPerSecond)} req/s · p95 ${Math.round(lastRun.summary.p95Ms)} ms`
-            : ' · finished, no summary returned'}
-        </p>
-      )}
+      <div className="min-h-8">
+        {lastRun && (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            Last run: {lastRun.scenario} · {lastRun.requests} requests · concurrency{' '}
+            {lastRun.concurrency}
+            {lastRun.summary
+              ? ` · ${lastRun.summary.succeeded} succeeded, ${lastRun.summary.failed} failed · ${Math.round(lastRun.summary.requestsPerSecond)} req/s · p95 ${Math.round(lastRun.summary.p95Ms)} ms`
+              : ' · finished, no summary returned'}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
