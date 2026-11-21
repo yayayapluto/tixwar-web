@@ -8,11 +8,14 @@ export type EventDetail = components['schemas']['EventDetail']
 export type TicketTier = components['schemas']['TicketTier']
 export type EventStatus = Event['status']
 
+export type EventSort = 'ending' | 'date' | 'price-asc' | 'price-desc'
+
 export type EventFilters = {
   q?: string
   category?: string
   city?: string
   status?: EventStatus
+  sort?: EventSort
   page?: number
   limit?: number
 }

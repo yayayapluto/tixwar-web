@@ -28,9 +28,9 @@ const PAGE_SIZE = 12
 const DEBOUNCE_MS = 300
 // Category chips past the working-memory limit are hidden behind "More".
 const VISIBLE_CHIP_COUNT = 4
-// The API has no server-side sort, so sorting is client-side over the pages
-// loaded so far. Deep-browse guard: at most 20 pages are fetched in parallel
-// when restoring a deep ?page= from the URL.
+// Sorting is server-side (the API takes a sort param), so the page
+// queries below just pass it through. Deep-browse guard: at most 20 pages
+// are fetched in parallel when restoring a deep ?page= from the URL.
 const MAX_PAGES = 20
 
 const SORT_KEYS = ['ending', 'date', 'price-asc', 'price-desc'] as const
@@ -85,22 +85,6 @@ function titleCase(value: string) {
     .join(' ')
 }
 
-function compareEvents(a: EventListItem, b: EventListItem, sort: SortKey): number {
-  switch (sort) {
-    case 'date':
-      return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
-    case 'price-asc':
-      return (a.minPrice ?? Number.POSITIVE_INFINITY) - (b.minPrice ?? Number.POSITIVE_INFINITY)
-    case 'price-desc':
-      return (b.minPrice ?? Number.NEGATIVE_INFINITY) - (a.minPrice ?? Number.NEGATIVE_INFINITY)
-    default: {
-      const aEnd = a.saleEndsAt ? new Date(a.saleEndsAt).getTime() : Number.POSITIVE_INFINITY
-      const bEnd = b.saleEndsAt ? new Date(b.saleEndsAt).getTime() : Number.POSITIVE_INFINITY
-      return aEnd - bEnd || new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
-    }
-  }
-}
-
 function EventCard({ event }: { event: EventListItem }) {
   // Same deadline-based countdown as the ticket detail page: the interval
   // recomputes from saleEndsAt every second, so it never drifts when the
@@ -139,17 +123,22 @@ function EventCard({ event }: { event: EventListItem }) {
       params={{ eventId: event.id }}
       className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <Card
-        className={cn(
-          'border-0 transition-transform duration-150 ease-out active:scale-[0.98]',
-          event.status === 'SOLD_OUT' && 'opacity-60',
-        )}
-      >
+      <Card className="border-0 transition-transform duration-150 ease-out active:scale-[0.98]">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
-            <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-snug tracking-tight">
-              {event.name}
-            </h2>
+            {/* Sold-out dimming covers the title only — the status badge
+                stays at full opacity so the state stays legible (DESIGN.md). */}
+            <div className={cn('min-w-0 flex-1', event.status === 'SOLD_OUT' && 'opacity-60')}>
+              {/* Fixed two-line slot (2 x 22px text-base/leading-snug):
+                  a one-line title leaves the second line blank, so every
+                  card keeps the same height. */}
+              <h2
+                title={event.name}
+                className="line-clamp-2 min-h-[44px] text-base font-semibold leading-snug tracking-tight"
+              >
+                {event.name}
+              </h2>
+            </div>
             <Badge
               variant={
                 event.status === 'ON_SALE'
@@ -162,7 +151,12 @@ function EventCard({ event }: { event: EventListItem }) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-1 text-sm text-muted-foreground">
+        <CardContent
+          className={cn(
+            'space-y-1 text-sm text-muted-foreground',
+            event.status === 'SOLD_OUT' && 'opacity-60',
+          )}
+        >
           <p>
             {titleCase(event.category)} · {titleCase(event.city)}
           </p>
@@ -271,6 +265,7 @@ function EventsPage() {
         q: appliedQ,
         status: status ? (status as EventStatus) : undefined,
         category: category ? category : undefined,
+        sort,
         page: pageNo,
         limit: PAGE_SIZE,
       }
@@ -306,7 +301,9 @@ function EventsPage() {
       if (!loadedItems.some((m) => m.id === event.id)) loadedItems.push(event)
     }
   }
-  const items = [...loadedItems].sort((a, b) => compareEvents(a, b, sort))
+  // The API already returns each page in the requested sort order, so no
+  // client-side sort here.
+  const items = loadedItems
 
   const firstPage = pages[0]
   const lastLoaded = [...pages].reverse().find((p) => p.data !== undefined)
@@ -420,12 +417,10 @@ function EventsPage() {
             {isUpdating ? 'Updating events…' : ''}
           </span>
         </p>
-        {/* Always rendered: one muted orientation line carrying the honest
-            sort disclosure (sorting is client-side over loaded events
-            only). Static text, so its wrapping never changes after load. */}
+        {/* Always rendered: one muted orientation line. Static text, so
+            its wrapping never changes after load. */}
         <p className="text-sm text-muted-foreground">
-          Flash-sale tickets — when the sale ends or stock runs out, it&apos;s gone. Sorted across
-          loaded events only.
+          Flash-sale tickets — when the sale ends or stock runs out, it&apos;s gone.
         </p>
       </div>
       {/* Realtime: status, category and sort apply the moment they change.

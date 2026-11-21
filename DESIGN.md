@@ -27,7 +27,8 @@ payment countdown. The UI should make that race legible, not decorate it.
 
 - **Events:** the list itself, with sale state visible on each card
   (no border on any card; `ON_SALE` keeps its default badge,
-  `SOLD_OUT` is dimmed).
+  `SOLD_OUT` is dimmed — except its status badge, which stays at full
+  opacity so the state stays legible).
 - **Event detail:** the cheapest tier (primary border + `Cheapest` badge),
   the live sale countdown, and the remaining stock.
 - **Order:** the payment countdown and the total in the Pay button.
