@@ -180,9 +180,17 @@ function OrdersPage() {
         return 0
       })
     : []
-  // The pending-first sort is invisible without a heading, so at-risk
-  // orders get their own labelled section; the rest only get a heading
-  // when there is a split to explain, otherwise the list stays as it was.
+  // The pending-first sort is surfaced by the "Needs payment" badge in
+  // the header, not by a section heading above the grid: a heading block
+  // is 60px tall (24px title + 4px gap + 20px description + 12px gap),
+  // and it only appears once the data arrives, so the grid drops 60px
+  // below where the skeleton grid was. That space cannot be reserved —
+  // the skeleton cannot know whether pending orders exist — without
+  // either this same shift or a permanent 60px gap on pages with no
+  // pending orders. The badge fits inside the existing header row, so
+  // it appears without moving the title, the filter, or the grid.
+  // The rest only get a heading when there is a split to explain,
+  // otherwise the list stays as it was.
   const atRisk = orders.filter((o) => o.status === 'PENDING_PAYMENT')
   const rest = orders.filter((o) => o.status !== 'PENDING_PAYMENT')
   const split = atRisk.length > 0 && rest.length > 0
@@ -197,7 +205,14 @@ function OrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="min-w-0 text-2xl font-semibold">My orders</h1>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold">My orders</h1>
+          {atRisk.length > 0 && (
+            <Badge variant="warning" className="shrink-0">
+              Needs payment · {atRisk.length}
+            </Badge>
+          )}
+        </div>
         <Select
           value={status === '' ? 'all' : status}
           onValueChange={(v) => updateStatus(v === 'all' ? '' : v)}
@@ -251,21 +266,11 @@ function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {atRisk.length > 0 && (
-            <section aria-labelledby="needs-payment-heading" className="space-y-3">
-              <div className="space-y-1">
-                <h2 id="needs-payment-heading" className="text-base font-semibold">
-                  Needs payment — soonest first
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Pay before the countdown ends or the tickets are released.
-                </p>
-              </div>
-              <div className="grid gap-3">
-                {atRisk.map((order) => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            </section>
+            <div className="grid gap-3">
+              {atRisk.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+            </div>
           )}
           {rest.length > 0 &&
             (split ? (
