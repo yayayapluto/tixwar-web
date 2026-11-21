@@ -13,6 +13,7 @@ import {
   Ticket,
 } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
+import { SmoothCursor } from '@/components/smooth-cursor'
 import { Toaster } from '@/components/toaster'
 import {
   AlertDialog,
@@ -325,6 +326,7 @@ function RootComponent() {
           </ScrollArea>
           <BottomBar />
           <Toaster />
+          <SmoothCursor />
         </div>
       </ThemeProvider>
     </QueryClientProvider>
