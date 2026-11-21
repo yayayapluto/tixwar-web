@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Check, Eye, EyeOff, LoaderCircle, X } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,48 @@ import { Label } from '@/components/ui/label'
 import { ApiError } from '@/lib/errors'
 
 export const MIN_PASSWORD_LENGTH = 10
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Raw API messages are Zod wording ("must be a valid email address or
+// "admin""); users only ever see these plain versions.
+function friendlyFieldMessage(
+  field: string,
+  rawMessage: string,
+  mode: 'login' | 'register',
+): string | null {
+  const lower = field.toLowerCase()
+  if (lower.includes('email')) {
+    return mode === 'login'
+      ? 'Enter a valid email address or username.'
+      : 'Enter a valid email address.'
+  }
+  if (lower.includes('password')) {
+    const min = rawMessage.match(/at least (\d+)/)?.[1]
+    if (min) return `Password must be at least ${min} characters.`
+    return 'Check your password and try again.'
+  }
+  return null
+}
+
+// Pull the API's field errors (if any) out of an error and translate them;
+// anything unmapped stays with the global error slot.
+function extractFieldErrors(
+  error: unknown,
+  mode: 'login' | 'register',
+): { email?: string; password?: string } {
+  if (!(error instanceof ApiError)) return {}
+  const out: { email?: string; password?: string } = {}
+  for (const fieldError of error.errors ?? []) {
+    if (!fieldError.field) continue
+    const message = friendlyFieldMessage(fieldError.field, fieldError.message, mode)
+    if (!message) continue
+    const lower = fieldError.field.toLowerCase()
+    if (lower.includes('email') && !out.email) out.email = message
+    if (lower.includes('password') && !out.password) out.password = message
+  }
+  return out
+}
 
 // The email the user typed, kept in sessionStorage so a refresh or a trip to
 // the other auth page doesn't wipe the form. Never the password.
@@ -40,15 +82,22 @@ function persistEmailDraft(email: string) {
 export function AuthFormError({
   error,
   showResetLink,
+  mode = 'register',
 }: {
   error: unknown
   showResetLink?: boolean
+  mode?: 'login' | 'register'
 }) {
   if (!error) return null
   const isApiError = error instanceof ApiError
   const isUnauthorized = isApiError && (error.status === 401 || error.code === 'UNAUTHORIZED')
   const retryAfter = isApiError ? error.retryAfterSeconds : undefined
-  const fieldErrors = isApiError ? (error.errors ?? []) : []
+  const isValidation = isApiError && error.code === 'VALIDATION_FAILED'
+  const friendlyFields = (isApiError ? (error.errors ?? []) : [])
+    .map((fieldError) =>
+      fieldError.field ? friendlyFieldMessage(fieldError.field, fieldError.message, mode) : null,
+    )
+    .filter((message): message is string => message !== null)
   return (
     <div role="alert" className="space-y-1">
       {isUnauthorized ? (
@@ -63,23 +112,22 @@ export function AuthFormError({
           )}
           .
         </p>
+      ) : isValidation && friendlyFields.length > 0 ? (
+        <ul className="space-y-0.5">
+          {friendlyFields.map((message) => (
+            <li key={message} className="text-xs text-destructive">
+              {message}
+            </li>
+          ))}
+        </ul>
+      ) : isValidation ? (
+        <p className="text-sm text-destructive">
+          Please check the details you entered and try again.
+        </p>
       ) : (
         <p className="text-sm text-destructive">
           {isApiError ? error.detail : 'Something went wrong. Please try again.'}
         </p>
-      )}
-      {fieldErrors.length > 0 && (
-        <ul className="space-y-0.5">
-          {fieldErrors.map((fieldError) => (
-            <li
-              key={`${fieldError.field ?? 'field'}-${fieldError.message}`}
-              className="text-xs text-destructive"
-            >
-              {fieldError.field ? <span className="capitalize">{fieldError.field}: </span> : null}
-              {fieldError.message}
-            </li>
-          ))}
-        </ul>
       )}
       {retryAfter !== undefined && (
         <p className="text-xs text-muted-foreground">Try again in {retryAfter}s</p>
@@ -107,7 +155,20 @@ export function AuthForm({
   // Checked by default: an unchecked box silently drops the session when the
   // browser closes, while register already persists for 7 days.
   const [rememberMe, setRememberMe] = useState(true)
-  const [clientError, setClientError] = useState<string | null>(null)
+  // Inline field errors: client-side first, then the server's field errors
+  // translated to the same plain wording. A field error clears as soon as
+  // the user edits that field.
+  const [clientEmailError, setClientEmailError] = useState<string | null>(null)
+  const [clientPasswordError, setClientPasswordError] = useState<string | null>(null)
+  const [serverEmailError, setServerEmailError] = useState<string | null>(null)
+  const [serverPasswordError, setServerPasswordError] = useState<string | null>(null)
+  useEffect(() => {
+    const mapped = extractFieldErrors(error, mode)
+    setServerEmailError(mapped.email ?? null)
+    setServerPasswordError(mapped.password ?? null)
+  }, [error, mode])
+  const emailError = clientEmailError ?? serverEmailError
+  const passwordError = clientPasswordError ?? serverPasswordError
   const [passwordTouched, setPasswordTouched] = useState(false)
   const passwordLengthMet = password.length >= MIN_PASSWORD_LENGTH
   // In login mode the identifier can be an email address or the admin alias
@@ -120,11 +181,31 @@ export function AuthForm({
     // Enter submits the form even while the button is disabled, so guard
     // here too — otherwise a second submit can fire a duplicate mutation.
     if (isPending) return
-    if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
-      setClientError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
-      return
+    // Validated here (not with `required`) so an empty or mistyped field
+    // gets the same friendly inline message instead of the browser's
+    // generic bubble.
+    const trimmedEmail = email.trim()
+    let emailProblem: string | null = null
+    if (trimmedEmail === '') {
+      emailProblem = isLogin ? 'Enter your email address or username.' : 'Enter your email address.'
+    } else if (
+      isLogin
+        ? !(trimmedEmail.toLowerCase() === 'admin' || EMAIL_PATTERN.test(trimmedEmail))
+        : !EMAIL_PATTERN.test(trimmedEmail)
+    ) {
+      emailProblem = isLogin
+        ? 'Enter a valid email address or username.'
+        : 'Enter a valid email address.'
     }
-    setClientError(null)
+    let passwordProblem: string | null = null
+    if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
+      passwordProblem = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
+    } else if (isLogin && password === '') {
+      passwordProblem = 'Enter your password.'
+    }
+    setClientEmailError(emailProblem)
+    setClientPasswordError(passwordProblem)
+    if (emailProblem || passwordProblem) return
     onSubmit(email, password, rememberMe)
   }
 
@@ -143,10 +224,17 @@ export function AuthForm({
           onChange={(e) => {
             setEmail(e.target.value)
             persistEmailDraft(e.target.value)
+            setClientEmailError(null)
+            setServerEmailError(null)
           }}
-          required
+          aria-invalid={emailError !== null}
+          aria-describedby="email-error"
           disabled={isPending}
         />
+        {/* Reserved one-line slot so an inline error never pushes the form down. */}
+        <p id="email-error" className="min-h-4 text-xs text-destructive" role="alert">
+          {emailError ?? ''}
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
@@ -156,15 +244,16 @@ export function AuthForm({
             type={showPassword ? 'text' : 'password'}
             enterKeyHint="go"
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            aria-describedby={mode === 'register' ? 'password-hint' : undefined}
+            aria-describedby={mode === 'register' ? 'password-hint' : 'password-error'}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value)
-              setClientError(null)
+              setClientPasswordError(null)
+              setServerPasswordError(null)
               setPasswordTouched(true)
             }}
             onBlur={() => setPasswordTouched(true)}
-            required
+            aria-invalid={passwordError !== null}
             disabled={isPending}
             className="pr-10"
           />
@@ -193,7 +282,16 @@ export function AuthForm({
           </Button>
         </div>
         {mode === 'register' &&
-          (passwordTouched ? (
+          (passwordError ? (
+            <p
+              id="password-hint"
+              className="flex items-center gap-1.5 text-xs text-destructive"
+              role="alert"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+              {passwordError}
+            </p>
+          ) : passwordTouched ? (
             <p id="password-hint" className="flex items-center gap-1.5 text-xs">
               {passwordLengthMet ? (
                 <Check className="size-3.5 text-success" aria-hidden="true" />
@@ -210,14 +308,20 @@ export function AuthForm({
             </p>
           ))}
         {mode === 'login' && (
-          <div className="flex justify-end">
-            <Link
-              to="/forgot-password"
-              className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          <>
+            {/* Reserved one-line slot so an inline error never pushes the form down. */}
+            <p id="password-error" className="min-h-4 text-xs text-destructive" role="alert">
+              {passwordError ?? ''}
+            </p>
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          </>
         )}
       </div>
       {mode === 'login' && (
@@ -241,14 +345,12 @@ export function AuthForm({
       )}
       {/* Error slot reserves the worst-case height (detail 2 lines 40px +
           retry line 16px + gap 4px = 60px) so an API error cannot push the
-          submit button down. */}
+          submit button down. Field errors already show under their inputs;
+          this slot only carries whole-form errors (wrong password, rate
+          limit, ...). */}
       <div className="min-h-15">
-        {clientError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {clientError}
-          </p>
-        ) : (
-          <AuthFormError error={error} showResetLink={mode === 'login'} />
+        {emailError || passwordError ? null : (
+          <AuthFormError error={error} showResetLink={mode === 'login'} mode={mode} />
         )}
       </div>
       <Button type="submit" className="w-full" disabled={isPending} aria-busy={isPending}>
