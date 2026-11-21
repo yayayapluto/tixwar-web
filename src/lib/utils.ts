@@ -20,6 +20,23 @@ export function formatDate(iso: string) {
   }).format(new Date(iso))
 }
 
+// Relative day label for an upcoming event, so the ticket list reads at a
+// glance at the door ("Today", "Tomorrow", "in 3 days"). Only the next
+// 7 days get a label; anything further out (or in the past) returns
+// undefined and the absolute date stands on its own.
+export function formatRelativeDay(iso: string): string | undefined {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return undefined
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfEventDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const diffDays = Math.round((startOfEventDay - startOfToday) / (24 * 60 * 60 * 1000))
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  if (diffDays >= 2 && diffDays <= 7) return `in ${diffDays} days`
+  return undefined
+}
+
 export function newIdempotencyKey() {
   const bytes = new Uint8Array(16)
   crypto.getRandomValues(bytes)

@@ -16,7 +16,7 @@ import type { EventDetail } from '@/features/events/queries'
 import { type Ticket, useTickets } from '@/features/tickets/queries'
 import { getV1EventsById } from '@/lib/client'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatDate, formatRelativeDay } from '@/lib/utils'
 
 export const Route = createFileRoute('/tickets/')({
   beforeLoad: ({ location }) => {
@@ -54,6 +54,7 @@ function TicketCard({
   // otherwise its tier. The code is the only identifier when the event
   // never resolved.
   const title = total > 1 ? `Ticket ${index + 1} of ${total}` : (tier?.name ?? 'Ticket')
+  const relativeDay = event ? formatRelativeDay(event.startsAt) : undefined
 
   return (
     <li>
@@ -101,6 +102,7 @@ function TicketCard({
             ) : event ? (
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="truncate text-sm">
+                  {relativeDay !== undefined ? `${relativeDay} · ` : ''}
                   {formatDate(event.startsAt)} · {event.venue}, {event.city}
                 </p>
                 {/* Tier row is always rendered (min-h-5) so a ticket
