@@ -24,7 +24,7 @@ function SkeletonShell({ children }: { children: React.ReactNode }) {
 
 function EventCardSkeleton() {
   return (
-    <Card>
+    <Card className="border-0">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <Skeleton className="h-4 min-w-0 flex-1" />

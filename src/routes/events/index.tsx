@@ -130,8 +130,7 @@ function EventCard({ event }: { event: EventListItem }) {
     >
       <Card
         className={cn(
-          'transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]',
-          event.status === 'ON_SALE' && 'border-primary/50',
+          'border-0 transition-transform duration-150 ease-out active:scale-[0.98]',
           event.status === 'SOLD_OUT' && 'opacity-60',
         )}
       >
