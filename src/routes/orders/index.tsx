@@ -277,6 +277,9 @@ function OrdersPage() {
           </SelectContent>
         </Select>
       </div>
+      <p className="text-sm text-muted-foreground">
+        Your orders, newest first. Pay unpaid ones before the countdown runs out.
+      </p>
 
       {query.isPending ? (
         <OrdersGridSkeleton />

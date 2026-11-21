@@ -316,7 +316,9 @@ function TicketsPage() {
             search or filter is active, so it never pops in and pushes
             the list down. */}
         <p className="text-sm text-muted-foreground">
-          {filtering ? `${visible.length} of ${total} tickets` : ' '}
+          {filtering
+            ? `${visible.length} of ${total} tickets`
+            : 'Show the QR code at the entrance.'}
         </p>
       </div>
       {query.isPending ? (

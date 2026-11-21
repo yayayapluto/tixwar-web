@@ -40,6 +40,9 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Settings</h1>
+      <p className="text-sm text-muted-foreground">
+        Your account and developer tools in one place.
+      </p>
 
       <section aria-labelledby="account-heading" className="space-y-4">
         <h2 id="account-heading" className="text-lg font-semibold">

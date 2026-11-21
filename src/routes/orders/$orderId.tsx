@@ -153,6 +153,9 @@ function OrderDetailPage() {
           {STATUS_LABEL[displayStatus] ?? displayStatus}
         </Badge>
       </div>
+      <p className="text-sm text-muted-foreground">
+        Pay here before time runs out. Your ticket appears here once payment is confirmed.
+      </p>
 
       <Card>
         <CardHeader>

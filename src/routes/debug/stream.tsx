@@ -381,8 +381,9 @@ function DebugPage() {
       <div>
         <h1 className="text-2xl font-semibold">Debug dashboard</h1>
         <p className="min-h-15 text-sm text-muted-foreground sm:min-h-10">
-          Live request traces, load tests and chaos injection. Ask the API owner to enable debug
-          mode.
+          Step-by-step notes from background jobs, for example the worker processing an order. Notes
+          appear only while such jobs run, so browsing alone shows nothing. The cards below can also
+          load-test the system or break a part of it on purpose.
         </p>
       </div>
 
@@ -531,7 +532,7 @@ function DebugPage() {
               <div className="flex min-h-[15rem] flex-col justify-center">
                 <EmptyState
                   title="No traces yet"
-                  description="Connected — waiting for traces. Run a load test or wait for traffic."
+                  description="Traces appear when background jobs run, for example while an order is being processed or a load test is running. Browsing the site does not create traces."
                 />
               </div>
             )
@@ -556,6 +557,9 @@ function DebugPage() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Load generator</CardTitle>
+            <CardDescription>
+              Pretend many buyers arrive at once to see if the system keeps up.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <LoadGeneratorForm />
@@ -576,6 +580,9 @@ function DebugPage() {
                 Check current state
               </Button>
             </div>
+            <CardDescription>
+              Break one part on purpose to see if the rest keeps working.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-3">
             <Alert
