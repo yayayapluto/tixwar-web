@@ -19,7 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Toggle } from '@/components/ui/toggle'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { getV1Events } from '@/lib/client'
-import { STATUS_LABEL } from '@/lib/status'
+import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
@@ -110,11 +110,6 @@ function EventCard({ event }: { event: EventListItem }) {
   // Destructive token only for a sale ending in under an hour (DESIGN.md).
   const saleEndingSoon = saleLive && saleSecondsLeft < 3600
   const lowStock = event.remaining > 0 && event.remaining <= 10
-  // Honest always-on stock signal: on real data remaining is 349-350 of 350,
-  // so the old "Only N left" cliff (remaining <= 10) rendered on zero cards.
-  // The neutral count shows scarcity before the cliff; the destructive line
-  // is kept for genuinely low stock.
-  const showStock = event.status !== 'SOLD_OUT' && event.remaining > 0 && event.totalQuota > 0
   // Reserved slots: the countdown and stock lines keep their height even
   // after the sale ends or the stock runs out (rendered invisible and
   // aria-hidden), so a card never shrinks and pushes the rows below it.
@@ -122,6 +117,22 @@ function EventCard({ event }: { event: EventListItem }) {
   const showCountdownSlot = event.saleEndsAt != null
   const showStockSlot = event.totalQuota > 0
   const showSaleGroup = showCountdownSlot || showStockSlot || event.minPrice != null
+  // The stock line is a scarcity signal, not a catalog count: it only
+  // renders when stock is actually low (ten or fewer left, or a quarter
+  // of the quota or less). Otherwise the slot stays reserved but empty,
+  // so the card keeps its height.
+  const showStock =
+    event.status !== 'SOLD_OUT' &&
+    event.remaining > 0 &&
+    event.totalQuota > 0 &&
+    (lowStock || event.remaining <= event.totalQuota * 0.25)
+  // A sold-out card is still a link to the detail page, not a dead end:
+  // the reserved stock slot carries that cue instead of a count, so the
+  // card keeps its height and the tap's outcome is predictable. (Only
+  // when the card has a quota at all; without one there is no slot to
+  // reuse and the badge alone carries the state.)
+  const showSoldOutCue = event.status === 'SOLD_OUT' && showStockSlot
+  const showStockLine = showStock || showSoldOutCue
   return (
     <Link
       to="/events/$eventId"
@@ -140,7 +151,11 @@ function EventCard({ event }: { event: EventListItem }) {
               {event.name}
             </h2>
             <Badge
-              variant={event.status === 'ON_SALE' ? 'default' : 'secondary'}
+              variant={
+                event.status === 'ON_SALE'
+                  ? 'default'
+                  : (EVENT_STATUS_VARIANT[event.status] ?? 'secondary')
+              }
               className="shrink-0"
             >
               {STATUS_LABEL[event.status] ?? event.status}
@@ -169,16 +184,18 @@ function EventCard({ event }: { event: EventListItem }) {
               )}
               {showStockSlot && (
                 <p
-                  aria-hidden={!showStock}
+                  aria-hidden={!showStockLine}
                   className={cn(
                     'text-sm tabular-nums',
                     showStock && lowStock && 'font-medium text-destructive',
-                    !showStock && 'invisible',
+                    !showStockLine && 'invisible',
                   )}
                 >
-                  {showStock && lowStock
-                    ? `Only ${event.remaining} left`
-                    : `${event.remaining} of ${event.totalQuota} tickets left`}
+                  {showSoldOutCue
+                    ? 'Sold out — view details'
+                    : showStock && lowStock
+                      ? `Only ${event.remaining} left`
+                      : `${event.remaining} of ${event.totalQuota} tickets left`}
                 </p>
               )}
               {event.minPrice != null && (
@@ -303,6 +320,11 @@ function EventsPage() {
   // during every refetch and appended 2 skeleton cards under the old grid
   // (~250px that then vanished).
   const isAppending = items.length > 0 && pages.some((p) => p.isPending)
+  // A filter/search refetch keeps the old cards on screen (keepPreviousData)
+  // with no other signal that anything is happening. "Updating…" surfaces
+  // it; it stays hidden during a cold load (the skeleton covers that) and
+  // while appending a page (the load-more skeleton covers that).
+  const isUpdating = !isPending && items.length > 0 && isFetching && !isAppending
   const firstError = pages.find((p) => p.isError)?.error
 
   // Category chips come from loaded items only, never hardcoded. While a
@@ -383,11 +405,27 @@ function EventsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Events</h1>
         {/* Always rendered: the line is a blank placeholder until the first
-            page loads, so it never pops in and pushes the filter row down. */}
+            page loads, so it never pops in and pushes the filter row down.
+            The "Updating…" span is always in the DOM too (invisible while
+            idle), so it never widens the line or wraps it when a refetch
+            starts; the sr-only live region announces the same state. */}
         <p className="text-sm text-muted-foreground">
           {total !== undefined
             ? `${total} events${filtered ? ' matching your search' : ''}`
             : '\u00A0'}
+          <span aria-hidden="true" className={cn(!isUpdating && 'invisible')}>
+            {' · Updating…'}
+          </span>
+          <span role="status" aria-live="polite" className="sr-only">
+            {isUpdating ? 'Updating events…' : ''}
+          </span>
+        </p>
+        {/* Always rendered: one muted orientation line carrying the honest
+            sort disclosure (sorting is client-side over loaded events
+            only). Static text, so its wrapping never changes after load. */}
+        <p className="text-sm text-muted-foreground">
+          Flash-sale tickets — when the sale ends or stock runs out, it&apos;s gone. Sorted across
+          loaded events only.
         </p>
       </div>
       {/* Realtime: status, category and sort apply the moment they change.
