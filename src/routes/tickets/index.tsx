@@ -346,11 +346,10 @@ function TicketsPage() {
                 <Toggle
                   key={value}
                   size="sm"
-                  variant="outline"
+                  variant="chip"
                   pressed={tab === value}
                   onPressedChange={() => setTab(value)}
                   aria-label={`Show ${TAB_LABELS[value].toLowerCase()} tickets`}
-                  className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
                 >
                   {TAB_LABELS[value]}
                 </Toggle>

@@ -14,6 +14,11 @@ const toggleVariants = cva(
         default: 'bg-transparent',
         outline:
           'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
+        // Pill-shaped filter chip: the outline look plus the primary
+        // pressed state that was duplicated at every chip call site.
+        // Later classes win over the base data-[state=on] accent colors
+        // via tailwind-merge, so pressed chips render exactly as before.
+        chip: 'rounded-full border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground',
       },
       size: {
         default: 'h-11 px-4 py-2',
