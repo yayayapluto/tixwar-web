@@ -235,7 +235,10 @@ export function AuthForm({
           </p>
         </div>
       )}
-      <div className="min-h-10">
+      {/* Error slot reserves the worst-case height (detail 2 lines 40px +
+          retry line 16px + gap 4px = 60px) so an API error cannot push the
+          submit button down. */}
+      <div className="min-h-15">
         {clientError ? (
           <p role="alert" className="text-sm text-destructive">
             {clientError}

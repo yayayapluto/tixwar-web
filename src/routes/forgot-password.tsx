@@ -12,6 +12,16 @@ import { getSession } from '@/lib/auth'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
+// Long email addresses render truncated with the full address on hover, so a
+// very long email never widens the card or adds lines to the success state.
+function TruncatedEmail({ email }: { email: string }) {
+  return (
+    <span className="inline-block max-w-full truncate align-bottom" title={email}>
+      {email}
+    </span>
+  )
+}
+
 export const Route = createFileRoute('/forgot-password')({
   beforeLoad: () => {
     if (getSession()) throw redirect({ to: '/events' })
@@ -72,7 +82,7 @@ function ForgotPasswordPage() {
             <>
               <CardTitle>Check your email</CardTitle>
               <CardDescription className="min-h-10">
-                We sent a reset link to {sentTo}.
+                We sent a reset link to <TruncatedEmail email={sentTo} />.
               </CardDescription>
             </>
           ) : (
@@ -85,11 +95,12 @@ function ForgotPasswordPage() {
           )}
         </CardHeader>
         <CardContent>
-          {/* Fixed slot sized to the taller success state (352px, measured
-              in headless Chromium with the production CSS): the form state
-              (220px) fits inside it, so the card keeps its height across
-              the transition instead of growing. */}
-          <div className="min-h-[352px]">
+          {/* Fixed slot sized to the taller success state (372px: 352px measured
+              in headless Chromium with the production CSS, +20px for the error
+              slot min-h-10 -> min-h-15): the form state (240px) fits inside it,
+              so the card keeps its height across the transition instead of
+              growing. */}
+          <div className="min-h-[372px]">
             {sentTo ? (
               <div ref={successRef} tabIndex={-1} className="space-y-4 outline-none">
                 <div className="flex items-start gap-2">
@@ -98,15 +109,15 @@ function ForgotPasswordPage() {
                     aria-hidden="true"
                   />
                   <p role="status" className="text-sm">
-                    Check your inbox — if an account exists for {sentTo}, we&apos;ve sent a reset
-                    link. The link expires in 1 hour.
+                    Check your inbox — if an account exists for <TruncatedEmail email={sentTo} />,
+                    we&apos;ve sent a reset link. The link expires in 1 hour.
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Don&apos;t see it? Check your spam or junk folder. Still nothing after a few
                   minutes, request a new link.
                 </p>
-                <div className="min-h-10">
+                <div className="min-h-15">
                   <AuthFormError error={forgot.error} />
                 </div>
                 <Button
@@ -153,7 +164,7 @@ function ForgotPasswordPage() {
                     required
                   />
                 </div>
-                <div className="min-h-10">
+                <div className="min-h-15">
                   <AuthFormError error={forgot.error} />
                 </div>
                 <Button type="submit" className="w-full" disabled={forgot.isPending}>
