@@ -160,7 +160,9 @@ function EventCard({ event }: { event: EventListItem }) {
           <p>
             {titleCase(event.category)} · {titleCase(event.city)}
           </p>
-          <p>{event.venue}</p>
+          <p title={event.venue} className="truncate">
+            {event.venue}
+          </p>
           <p>{formatDate(event.startsAt)}</p>
           {showSaleGroup && (
             <div className="space-y-1 border-t pt-2">
@@ -406,7 +408,7 @@ function EventsPage() {
             The "Updating…" span is always in the DOM too (invisible while
             idle), so it never widens the line or wraps it when a refetch
             starts; the sr-only live region announces the same state. */}
-        <p className="text-sm text-muted-foreground">
+        <p className="whitespace-nowrap text-sm text-muted-foreground">
           {total !== undefined
             ? `${total} events${filtered ? ' matching your search' : ''}`
             : '\u00A0'}
@@ -529,11 +531,10 @@ function EventsPage() {
           <>
             <Toggle
               size="sm"
-              variant="outline"
+              variant="chip"
               pressed={category === ''}
               onPressedChange={() => toggleCategory('')}
               aria-label="Show all categories"
-              className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
             >
               All
             </Toggle>
@@ -541,11 +542,10 @@ function EventsPage() {
               <Toggle
                 key={c}
                 size="sm"
-                variant="outline"
+                variant="chip"
                 pressed={category === c}
                 onPressedChange={() => toggleCategory(c)}
                 aria-label={`Filter by ${titleCase(c)}`}
-                className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
               >
                 {titleCase(c)}
               </Toggle>
