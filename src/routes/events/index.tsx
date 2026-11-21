@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { EventsGridSkeleton, EventsPageSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
@@ -197,6 +197,22 @@ function EventsPage() {
   const page = search.page ?? 1
   const sort = search.sort ?? 'ending'
 
+  // Status, category and sort are staged like the search draft: changing a
+  // control only updates the local draft (the control visibly responds),
+  // nothing refetches until the form is submitted. The drafts re-sync
+  // whenever the applied URL values change (apply, clear, back/forward),
+  // so the controls always mirror what the list is actually showing.
+  const [draftStatus, setDraftStatus] = useState(status)
+  const [draftCategory, setDraftCategory] = useState(category)
+  const [draftSort, setDraftSort] = useState<SortKey>(sort)
+
+  useEffect(() => {
+    setQ(search.q)
+    setDraftStatus(status)
+    setDraftCategory(category)
+    setDraftSort(sort)
+  }, [search.q, status, category, sort])
+
   // Filter/search/sort/page changes replace the current history entry so
   // scrolling through pages does not spam the back stack; the URL still
   // carries the full state, so back from detail restores it.
@@ -265,10 +281,14 @@ function EventsPage() {
   const visibleCategories = showAllCategories
     ? knownCategories
     : knownCategories.slice(0, VISIBLE_CHIP_COUNT)
-  const shownCategories =
-    category === '' || visibleCategories.includes(category)
-      ? visibleCategories
-      : [...visibleCategories, category]
+  const shownCategories = [
+    ...visibleCategories,
+    // The applied and the staged category are always kept visible, so a
+    // chip clicked before apply never vanishes from the row.
+    ...[...new Set([category, draftCategory])].filter(
+      (c) => c !== '' && !visibleCategories.includes(c),
+    ),
+  ]
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -292,10 +312,24 @@ function EventsPage() {
   const filtered = appliedQ !== '' || status !== '' || category !== ''
   const clearFilters = () => {
     setQ('')
+    setDraftStatus('')
+    setDraftCategory('')
     updateSearch({ q: '', status: '', category: '', page: 1 })
   }
+  // Category chips only stage a value; the list does not change until apply.
   const toggleCategory = (value: string) => {
-    updateSearch({ category: category === value ? '' : value, page: 1 })
+    setDraftCategory(draftCategory === value ? '' : value)
+  }
+  // Clearing the search input only clears the draft, unless the draft is
+  // the query currently applied — then the active query is cleared too
+  // (one refetch without q).
+  const clearSearch = () => {
+    if (q === appliedQ && appliedQ !== '') {
+      setQ('')
+      updateSearch({ q: '', page: 1 })
+    } else {
+      setQ('')
+    }
   }
   const refetchAll = () => {
     void Promise.all(pages.map((p) => p.refetch()))
@@ -318,13 +352,21 @@ function EventsPage() {
           </p>
         )}
       </div>
-      {/* Search applies on submit (server-side, one request per search);
-          the status select applies immediately, like a filter. */}
+      {/* Search, filter and sort are staged, not live: changing a control
+          only updates the local draft. Submit applies everything at once
+          (server-side, one request per apply); the existing Search submit
+          is kept as the apply trigger. Clear filters still applies at once. */}
       <form
         className="flex flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
           e.preventDefault()
-          updateSearch({ q, page: 1 })
+          updateSearch({
+            q,
+            status: draftStatus,
+            category: draftCategory,
+            sort: draftSort,
+            page: 1,
+          })
         }}
       >
         <div className="relative flex-1">
@@ -337,13 +379,25 @@ function EventsPage() {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by event name"
             aria-label="Search by event name"
-            className="pl-8"
+            className="pl-8 pr-10"
           />
+          {q !== '' && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={clearSearch}
+              aria-label="Clear search"
+              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X aria-hidden="true" />
+            </Button>
+          )}
         </div>
         <Select
-          value={status === '' ? 'all' : status}
+          value={draftStatus === '' ? 'all' : draftStatus}
           onValueChange={(v) => {
-            updateSearch({ status: v === 'all' ? '' : v, page: 1 })
+            setDraftStatus(v === 'all' ? '' : v)
           }}
         >
           <SelectTrigger aria-label="Filter by status" className="sm:w-44">
@@ -358,9 +412,9 @@ function EventsPage() {
           </SelectContent>
         </Select>
         <Select
-          value={sort}
+          value={draftSort}
           onValueChange={(v) => {
-            updateSearch({ sort: v as SortKey })
+            setDraftSort(v as SortKey)
           }}
         >
           <SelectTrigger aria-label="Sort events" className="sm:w-48">
@@ -388,7 +442,7 @@ function EventsPage() {
           <Toggle
             size="sm"
             variant="outline"
-            pressed={category === ''}
+            pressed={draftCategory === ''}
             onPressedChange={() => toggleCategory('')}
             aria-label="Show all categories"
             className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
@@ -400,7 +454,7 @@ function EventsPage() {
               key={c}
               size="sm"
               variant="outline"
-              pressed={category === c}
+              pressed={draftCategory === c}
               onPressedChange={() => toggleCategory(c)}
               aria-label={`Filter by ${titleCase(c)}`}
               className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
