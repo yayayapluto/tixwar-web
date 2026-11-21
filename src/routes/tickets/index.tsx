@@ -51,29 +51,45 @@ function TicketCard({
         >
           <CardHeader>
             {eventPending ? (
-              <Skeleton className="h-5 w-2/3" />
+              // Same height as the real title: CardTitle is text-base
+              // leading-none (16px), so the bar is h-4, not h-5.
+              <Skeleton className="h-4 w-2/3" />
             ) : event ? (
               <CardTitle className="min-w-0 truncate">{event.name}</CardTitle>
             ) : (
-              <CardTitle className="min-w-0 truncate font-mono text-sm">{ticket.code}</CardTitle>
+              // min-h-4 reserves the 16px title line so the error
+              // fallback (text-sm, 14px) does not shrink the header.
+              <CardTitle className="min-h-4 min-w-0 truncate font-mono text-sm">
+                {ticket.code}
+              </CardTitle>
             )}
           </CardHeader>
           <CardContent className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-1">
               {eventPending ? (
+                // Same two rows as the loaded state: text-sm lines are
+                // 20px tall, so the bars are h-5 (not h-4).
                 <>
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-5 w-1/2" />
                 </>
               ) : event ? (
                 <>
                   <p className="truncate text-sm">
                     {formatDate(event.startsAt)} · {event.venue}, {event.city}
                   </p>
-                  {tier && <p className="text-sm text-muted-foreground">Tier: {tier.name}</p>}
+                  {/* Tier row is always rendered (min-h-5) so a ticket
+                      without a tier keeps the same card height. */}
+                  <p className="min-h-5 truncate text-sm text-muted-foreground">
+                    {tier ? `Tier: ${tier.name}` : ''}
+                  </p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Event details unavailable</p>
+                <>
+                  <p className="text-sm text-muted-foreground">Event details unavailable</p>
+                  {/* Reserved tier row: same height as pending/loaded. */}
+                  <p className="min-h-5" aria-hidden="true" />
+                </>
               )}
               <p className="truncate font-mono text-xs text-muted-foreground">
                 {ticket.code} · Issued {formatDate(ticket.issuedAt)}

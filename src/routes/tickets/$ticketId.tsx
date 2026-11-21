@@ -153,9 +153,11 @@ function TicketDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {eventQuery.isPending ? (
-            <div className="space-y-1" aria-busy="true">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+            // Same two text-sm rows as the loaded state (20px each):
+            // h-5 bars, not h-4, inside the same min-h-11 slot.
+            <div className="min-h-11 space-y-1" aria-busy="true">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-5 w-1/2" />
             </div>
           ) : eventQuery.isError ? (
             <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
@@ -167,61 +169,41 @@ function TicketDetailPage() {
               </Button>
             </div>
           ) : event ? (
-            <div className="space-y-1 text-sm text-muted-foreground">
+            // min-h-11 reserves both rows (44px) even when the ticket
+            // has no tier, so the QR box below never moves.
+            <div className="min-h-11 space-y-1 text-sm text-muted-foreground">
               <p>
                 {formatDate(event.startsAt)} · {event.venue}, {event.city}
               </p>
-              {tier && <p>Tier: {tier.name}</p>}
+              <p className="min-h-5">{tier ? `Tier: ${tier.name}` : ''}</p>
             </div>
           ) : null}
-          {qrExpired ? (
-            <div className="space-y-3">
+          {/*
+            QR slot: fixed 258px in every state (224px image + 2x16px
+            padding + 2px border). The expired / load-error alert renders
+            inside the same slot, so swapping QR -> alert (on expiry,
+            on image error, or when a fresh QR arrives) never moves the
+            countdown, the hint, or the button below. Previously the
+            expired and qrError branches were two separate boxes of
+            ~70-110px, which collapsed the card by ~150px.
+          */}
+          <div className="h-[258px]">
+            {qrExpired || qrError ? (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
+                className="flex h-full items-center justify-center rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
               >
-                {refetchError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    Gagal membuat QR baru. Periksa koneksimu lalu coba lagi — tiketmu tetap valid.
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium text-destructive">
-                    Link QR kedaluwarsa — tiketmu tetap valid. Refresh untuk QR baru.
-                  </p>
-                )}
+                <p className="text-sm font-medium text-destructive">
+                  {refetchError
+                    ? 'Gagal membuat QR baru. Periksa koneksimu lalu coba lagi — tiketmu tetap valid.'
+                    : qrExpired
+                      ? 'Link QR kedaluwarsa — tiketmu tetap valid. Refresh untuk QR baru.'
+                      : 'QR gagal dimuat. Refresh untuk QR baru.'}
+                </p>
               </div>
-              <RefreshQrButton
-                label={refetchError ? 'Coba lagi' : 'Refresh QR'}
-                isRefreshing={isRefreshing}
-                onRefresh={() => void handleRefresh()}
-              />
-            </div>
-          ) : qrError ? (
-            <div className="space-y-3">
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
-              >
-                {refetchError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    Gagal membuat QR baru. Periksa koneksimu lalu coba lagi — tiketmu tetap valid.
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium text-destructive">
-                    QR gagal dimuat. Refresh untuk QR baru.
-                  </p>
-                )}
-              </div>
-              <RefreshQrButton
-                label={refetchError ? 'Coba lagi' : 'Refresh QR'}
-                isRefreshing={isRefreshing}
-                onRefresh={() => void handleRefresh()}
-              />
-            </div>
-          ) : (
-            <>
-              {/* White background is required for QR scannability */}
-              <div className="flex justify-center rounded-lg border bg-white p-4">
+            ) : (
+              <div className="flex h-full justify-center rounded-lg border bg-white p-4">
+                {/* White background is required for QR scannability */}
                 <img
                   src={detail.qrUrl}
                   alt={`QR code for ticket ${ticket.code}`}
@@ -231,6 +213,16 @@ function TicketDetailPage() {
                   onError={() => setFailedQrUrl(detail.qrUrl)}
                 />
               </div>
+            )}
+          </div>
+          {qrExpired || qrError ? (
+            <RefreshQrButton
+              label={refetchError ? 'Coba lagi' : 'Refresh QR'}
+              isRefreshing={isRefreshing}
+              onRefresh={() => void handleRefresh()}
+            />
+          ) : (
+            <>
               <div
                 className={cn(
                   'rounded-lg border p-3 text-center',
@@ -248,9 +240,16 @@ function TicketDetailPage() {
                     ? formatCountdown(detail.qrExpiresIn)
                     : formatCountdown(qrSecondsLeft)}
                 </p>
+                {/*
+                  min-h-10 reserves two text-sm lines: the <60s warning
+                  ("Segera tunjukkan QR ini — hampir kedaluwarsa") wraps
+                  to two lines on narrow screens, and without the reserve
+                  the Download button below would jump 20px at the 60s
+                  threshold. The number above is already tabular-nums.
+                */}
                 <p
                   className={cn(
-                    'text-sm',
+                    'min-h-10 text-sm',
                     qrLowTime ? 'font-medium text-destructive' : 'text-muted-foreground',
                   )}
                 >
