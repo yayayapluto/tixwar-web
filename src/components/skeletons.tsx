@@ -27,7 +27,9 @@ function EventCardSkeleton() {
     <Card className="border-0">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-4 min-w-0 flex-1" />
+          {/* Same height as the real title: text-base with leading-snug
+              (22px line), so the bar is h-[22px], not h-4. */}
+          <Skeleton className="h-[22px] min-w-0 flex-1" />
           <Skeleton className="h-[22px] w-16 shrink-0" />
         </div>
       </CardHeader>

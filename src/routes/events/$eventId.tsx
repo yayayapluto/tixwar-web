@@ -100,7 +100,7 @@ function TierCard({
     <Card className={cn('flex h-full flex-col', cheapest && 'border-primary')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
+          <CardTitle className="min-w-0 flex-1 truncate leading-snug">{tier.name}</CardTitle>
           <span className="flex shrink-0 items-center gap-2">
             {cheapest && <Badge>Cheapest</Badge>}
             <span className="text-2xl font-bold tabular-nums">{formatCurrency(tier.price)}</span>

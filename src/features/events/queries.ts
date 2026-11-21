@@ -1,5 +1,5 @@
 import type { components } from '@api-types'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getV1Events, getV1EventsById, getV1EventsByIdStats } from '@/lib/client'
 
 export type Event = components['schemas']['Event']
@@ -21,6 +21,10 @@ export function useEvents(filters: EventFilters) {
   return useQuery({
     queryKey: ['events', filters],
     queryFn: async () => (await getV1Events({ query: filters, throwOnError: true })).data,
+    // Same reason as the page queries in routes/events: keep the previous
+    // category chips visible while q/status refetches, instead of flashing
+    // back to chip-shaped placeholders.
+    placeholderData: keepPreviousData,
   })
 }
 

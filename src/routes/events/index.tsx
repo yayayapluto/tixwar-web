@@ -1,4 +1,4 @@
-import { useQueries } from '@tanstack/react-query'
+import { keepPreviousData, useQueries } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Search, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -136,7 +136,7 @@ function EventCard({ event }: { event: EventListItem }) {
       >
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
-            <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-none tracking-tight">
+            <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-snug tracking-tight">
               {event.name}
             </h2>
             <Badge
@@ -260,6 +260,12 @@ function EventsPage() {
       return {
         queryKey: ['events', filters],
         queryFn: async () => (await getV1Events({ query: filters, throwOnError: true })).data,
+        // Keep the previous filter's cards on screen while the new filter
+        // fetches: without this, every category/search change with a cold
+        // cache unmounts the whole grid to 6 skeleton cards (the real
+        // result is 4 cards per category), which is the layout shift the
+        // user reported. The skeleton now only shows on a true cold load.
+        placeholderData: keepPreviousData,
       }
     }),
   })
@@ -291,6 +297,12 @@ function EventsPage() {
   const total = firstPage?.data?.meta.total
   const isPending = firstPage?.isPending ?? true
   const isFetching = pages.some((p) => p.isFetching)
+  // Load-more skeleton only while a LATER page is still pending (infinite
+  // scroll). A filter refetch keeps previous data, so no page is pending
+  // and this stays false — the old code keyed on isFetching, which is true
+  // during every refetch and appended 2 skeleton cards under the old grid
+  // (~250px that then vanished).
+  const isAppending = items.length > 0 && pages.some((p) => p.isPending)
   const firstError = pages.find((p) => p.isError)?.error
 
   // Category chips come from loaded items only, never hardcoded. While a
@@ -553,7 +565,7 @@ function EventsPage() {
             ))}
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-1" />
-          {isFetching ? (
+          {isAppending ? (
             <EventsGridSkeleton count={2} />
           ) : !hasMore ? (
             <div className="flex flex-col items-center gap-2">
