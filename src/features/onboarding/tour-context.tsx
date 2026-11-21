@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { useSession } from '@/features/auth/use-auth'
+import { TourIntro } from './tour-intro'
 import { TourOverlay } from './tour-overlay'
 import { TOUR_STEPS, TOUR_STORAGE_KEY } from './tour-steps'
 
@@ -30,6 +31,7 @@ export function useTour(): TourContextValue {
 // start the tour, and the overlay renders above the shell.
 export function TourProvider({ children }: { children: ReactNode }) {
   const [stepIndex, setStepIndex] = useState<number | null>(null)
+  const [introOpen, setIntroOpen] = useState(false)
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const session = useSession()
@@ -37,6 +39,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const finishTour = useCallback(() => {
     window.localStorage.setItem(TOUR_STORAGE_KEY, 'done')
     setStepIndex(null)
+    setIntroOpen(false)
+  }, [])
+
+  // The welcome box goes first: accepting it starts step 0, skipping it
+  // marks the tour done.
+  const acceptTour = useCallback(() => {
+    setIntroOpen(false)
+    setStepIndex(0)
   }, [])
 
   const goNext = useCallback(() => {
@@ -54,25 +64,25 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [stepIndex])
 
   // Starting from another route (Settings) goes to /events first, then
-  // starts once the route has changed; the step effect waits for its
-  // target to appear, so a still-loading list is fine.
+  // shows the welcome box; the step effect waits for its target to appear,
+  // so a still-loading list is fine.
   const startTour = useCallback(async () => {
     if (pathname !== '/events') {
       await navigate({ to: '/events' })
     }
-    setStepIndex(0)
+    setIntroOpen(true)
   }, [navigate, pathname])
 
   // Auto-start on the first visit to /events (or / which redirects there),
   // for guests and logged-in non-admins only. Finishing or skipping sets
-  // the flag, so this never runs twice on the same device. The tour only
-  // starts once the search input is actually in the DOM: starting while
-  // the skeleton is up would burn every step's retry budget and finish
-  // the tour before the user sees anything.
+  // the flag, so this never runs twice on the same device. The welcome box
+  // opens once the search input is actually in the DOM: starting while the
+  // skeleton is up would burn every step's retry budget and finish the
+  // tour before the user sees anything.
   useEffect(() => {
     if (pathname !== '/events' && pathname !== '/') return
     if (session?.user.role === 'admin') return
-    if (stepIndex !== null) return
+    if (stepIndex !== null || introOpen) return
     if (window.localStorage.getItem(TOUR_STORAGE_KEY)) return
     let cancelled = false
     let timer: number | undefined
@@ -81,7 +91,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const startWhenReady = () => {
       if (cancelled) return
       if (document.getElementById('tour-search')) {
-        setStepIndex(0)
+        setIntroOpen(true)
         return
       }
       waited += 200
@@ -94,13 +104,17 @@ export function TourProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(timer)
       window.clearTimeout(poll)
     }
-  }, [pathname, session, stepIndex])
+  }, [pathname, session, stepIndex, introOpen])
 
-  const value = useMemo(() => ({ startTour, isActive: stepIndex !== null }), [startTour, stepIndex])
+  const value = useMemo(
+    () => ({ startTour, isActive: stepIndex !== null || introOpen }),
+    [startTour, stepIndex, introOpen],
+  )
 
   return (
     <TourContext.Provider value={value}>
       {children}
+      {introOpen && <TourIntro onStart={acceptTour} onSkip={finishTour} />}
       {stepIndex !== null && (
         <TourOverlay stepIndex={stepIndex} onNext={goNext} onBack={goBack} onSkip={finishTour} />
       )}
