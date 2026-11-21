@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { AuthFormError } from '@/features/auth/auth-form'
 import { useForgotPassword } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { useDocumentTitle } from '@/lib/document-title'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/forgot-password')({
 })
 
 function ForgotPasswordPage() {
+  useDocumentTitle('Forgot password')
   const forgot = useForgotPassword()
   const [email, setEmail] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)

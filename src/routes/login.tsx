@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AuthForm, clearAuthEmailDraft } from '@/features/auth/auth-form'
 import { useLogin } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { useDocumentTitle } from '@/lib/document-title'
 import { toast } from '@/lib/toast'
 
 export const Route = createFileRoute('/login')({
@@ -30,6 +31,7 @@ function redirectLabel(redirect: string): string {
 }
 
 function LoginPage() {
+  useDocumentTitle('Log in')
   const navigate = useNavigate()
   const login = useLogin()
   const { redirect: redirectTo, reason } = Route.useSearch()

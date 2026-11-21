@@ -18,6 +18,7 @@ import { ApiKeysManager } from '@/features/api-keys/api-keys-manager'
 import { requireAuth } from '@/features/auth/route-guard'
 import { useLogout, useSession } from '@/features/auth/use-auth'
 import { useTour } from '@/features/onboarding/tour-context'
+import { useDocumentTitle } from '@/lib/document-title'
 
 export const Route = createFileRoute('/settings/')({
   beforeLoad: () => {
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/settings/')({
 })
 
 function SettingsPage() {
+  useDocumentTitle('Settings')
   const session = useSession()
   const logout = useLogout()
   const tour = useTour()

@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { requireCustomer } from '@/features/auth/route-guard'
 import { useEvent } from '@/features/events/queries'
 import { useTicket } from '@/features/tickets/queries'
+import { useDocumentTitle } from '@/lib/document-title'
 import { toast } from '@/lib/toast'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatDate } from '@/lib/utils'
@@ -57,6 +58,7 @@ function TicketDetailPage() {
   const { ticketId } = Route.useParams()
   const query = useTicket(ticketId)
   const eventQuery = useEvent(query.data?.data.ticket.eventId ?? '')
+  useDocumentTitle(eventQuery.data?.data.name ?? 'Ticket')
   const [failedQrUrl, setFailedQrUrl] = useState<string | null>(null)
   const [refetchError, setRefetchError] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)

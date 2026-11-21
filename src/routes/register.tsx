@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AuthForm, clearAuthEmailDraft } from '@/features/auth/auth-form'
 import { useRegister } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { useDocumentTitle } from '@/lib/document-title'
 import { ApiError } from '@/lib/errors'
 import { toast } from '@/lib/toast'
 
@@ -37,6 +38,7 @@ function redirectLabel(redirect: string): string {
 }
 
 function RegisterPage() {
+  useDocumentTitle('Create an account')
   const navigate = useNavigate()
   const register = useRegister()
   const { redirect: redirectTo } = Route.useSearch()

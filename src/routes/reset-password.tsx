@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { AuthFormError, MIN_PASSWORD_LENGTH } from '@/features/auth/auth-form'
 import { useResetPassword } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+import { useDocumentTitle } from '@/lib/document-title'
 import { ApiError } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 function ResetPasswordPage() {
+  useDocumentTitle('Reset password')
   const navigate = useNavigate()
   const reset = useResetPassword()
   const { token } = Route.useSearch()

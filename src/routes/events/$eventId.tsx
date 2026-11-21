@@ -27,6 +27,7 @@ import type { TicketTier } from '@/features/events/queries'
 import { useEvent, useEventStats } from '@/features/events/queries'
 import { useCreateOrder } from '@/features/orders/queries'
 import { useStockStream } from '@/features/realtime/use-stock-stream'
+import { useDocumentTitle } from '@/lib/document-title'
 import { toApiError } from '@/lib/errors'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
@@ -258,6 +259,7 @@ function EventDetailPage() {
   const event = useEvent(eventId, true, true)
   const stats = useEventStats(eventId)
   useStockStream(eventId, true)
+  useDocumentTitle(event.data?.data.name ?? 'Event')
   const [loadDrawer, setLoadDrawer] = useState<{ open: boolean; tierId?: string }>({
     open: false,
   })

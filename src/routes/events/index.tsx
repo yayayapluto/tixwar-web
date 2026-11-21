@@ -21,6 +21,7 @@ import { useSession } from '@/features/auth/use-auth'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
 import { scrollAppToTop } from '@/lib/app-scroll'
 import { getV1Events, getV1EventsById, getV1EventsByIdStats } from '@/lib/client'
+import { useDocumentTitle } from '@/lib/document-title'
 import { queryClient } from '@/lib/queryClient'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
@@ -242,6 +243,7 @@ function EventCard({ event, tourTarget }: { event: EventListItem; tourTarget?: b
 }
 
 function EventsPage() {
+  useDocumentTitle('Events')
   const search = Route.useSearch()
   const navigate = useNavigate()
   // The search input is realtime with a debounce: typing only updates the

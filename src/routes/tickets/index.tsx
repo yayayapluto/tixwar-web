@@ -15,6 +15,7 @@ import { requireCustomer } from '@/features/auth/route-guard'
 import type { EventDetail } from '@/features/events/queries'
 import { type Ticket, useTickets } from '@/features/tickets/queries'
 import { getV1EventsById, getV1TicketsById } from '@/lib/client'
+import { useDocumentTitle } from '@/lib/document-title'
 import { queryClient } from '@/lib/queryClient'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { cn, formatDate, formatRelativeDay } from '@/lib/utils'
@@ -231,6 +232,7 @@ const TAB_LABELS: Record<TicketTab, string> = {
 }
 
 function TicketsPage() {
+  useDocumentTitle('My tickets')
   const query = useTickets()
   const tickets = query.data?.data
   const [q, setQ] = useState('')

@@ -33,6 +33,7 @@ import { requireAdmin } from '@/features/auth/route-guard'
 import { LoadGeneratorForm } from '@/features/debug/load-generator-form'
 import { type DebugChaosRequest, useDebugChaos } from '@/features/debug/queries'
 import { type ChaosStateOverview, getDebugChaos, getDebugStream } from '@/lib/client'
+import { useDocumentTitle } from '@/lib/document-title'
 import { ApiError } from '@/lib/errors'
 import { useSse } from '@/lib/sse'
 import { toast } from '@/lib/toast'
@@ -242,6 +243,7 @@ function TraceRow({ trace }: { trace: Trace }) {
 }
 
 function DebugPage() {
+  useDocumentTitle('Debug')
   const chaos = useDebugChaos()
   // Read live from the API on mount, so a refresh shows chaos set elsewhere
   // instead of only what this page applied itself.

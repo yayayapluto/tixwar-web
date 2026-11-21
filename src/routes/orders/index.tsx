@@ -17,6 +17,7 @@ import { requireCustomer } from '@/features/auth/route-guard'
 import { useEvent } from '@/features/events/queries'
 import { type Order, type OrderStatus, useOrders } from '@/features/orders/queries'
 import { getV1EventsById, getV1OrdersById } from '@/lib/client'
+import { useDocumentTitle } from '@/lib/document-title'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -201,6 +202,7 @@ function OrderCard({ order }: { order: Order }) {
 }
 
 function OrdersPage() {
+  useDocumentTitle('My orders')
   const search = Route.useSearch()
   const navigate = useNavigate()
   const status = search.status ?? ''

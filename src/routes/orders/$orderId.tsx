@@ -24,6 +24,7 @@ import { useEvent } from '@/features/events/queries'
 import { useCancelOrder, useOrder } from '@/features/orders/queries'
 import { useOrderStream } from '@/features/realtime/use-order-stream'
 import { postV1OrdersByIdPay } from '@/lib/client'
+import { useDocumentTitle } from '@/lib/document-title'
 import { ApiError } from '@/lib/errors'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { toast } from '@/lib/toast'
@@ -46,6 +47,7 @@ function OrderDetailPage() {
   const cancel = useCancelOrder()
   useOrderStream(orderId, true)
   const eventQuery = useEvent(query.data?.data.order.eventId ?? '')
+  useDocumentTitle(eventQuery.data?.data.name ?? 'Order')
 
   const secondsLeft = useCountdown(query.data?.data.order.expiresAt)
   const order = query.data?.data.order

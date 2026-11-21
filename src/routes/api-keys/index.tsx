@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ApiKeysPageSkeleton } from '@/components/skeletons'
 import { ApiKeysManager } from '@/features/api-keys/api-keys-manager'
 import { requireAuth } from '@/features/auth/route-guard'
+import { useDocumentTitle } from '@/lib/document-title'
 
 export const Route = createFileRoute('/api-keys/')({
   beforeLoad: () => {
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/api-keys/')({
 })
 
 function ApiKeysPage() {
+  useDocumentTitle('API keys')
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">API keys</h1>
