@@ -12,7 +12,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ApiKeysManager } from '@/features/api-keys/api-keys-manager'
@@ -51,12 +50,6 @@ function SettingsPage() {
             <div className="flex items-center justify-between gap-2">
               <p className="shrink-0 text-sm text-muted-foreground">Email</p>
               <p className="min-h-5 min-w-0 truncate text-sm font-medium">{session?.user.email}</p>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <p className="shrink-0 text-sm text-muted-foreground">Role</p>
-              <Badge variant="secondary" className="min-w-[5.5rem] shrink-0 justify-center">
-                Customer
-              </Badge>
             </div>
             <div className="flex items-center justify-between gap-2">
               <p className="shrink-0 text-sm text-muted-foreground">Password</p>
