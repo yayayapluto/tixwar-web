@@ -216,30 +216,39 @@ export function OrderDetailSkeleton() {
         {/* Real Badge: text-xs line (16) + py-0.5 (4) + border (2) = 22px. */}
         <Skeleton className="h-[22px] w-24 shrink-0" />
       </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-4 w-32" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            {/* Real label is text-xs (16px line), not h-3. */}
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-5 w-64" />
-          </div>
-          <div className="space-y-1">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-5 w-2/3" />
-            <Skeleton className="h-5 w-1/2" />
-          </div>
-          {/* Real order-ID line: font-mono text-xs (16px) + CopyButton h-8. */}
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-4 min-w-0 flex-1" />
-            <Skeleton className="h-8 w-8 shrink-0" />
-          </div>
-          <Skeleton className="h-5 w-72" />
-        </CardContent>
-      </Card>
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-5 w-2/3" />
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-1">
+              {/* Real label is text-xs (16px line), not h-3. */}
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-5 w-64" />
+            </div>
+            <Skeleton className="h-5 w-72" />
+          </CardContent>
+        </Card>
+      </section>
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-36" />
+        <Skeleton className="h-5 w-2/3" />
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-1">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-5 w-1/2" />
+            </div>
+            {/* Real order-ID line: font-mono text-xs (16px) + CopyButton h-8. */}
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 min-w-0 flex-1" />
+              <Skeleton className="h-8 w-8 shrink-0" />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
       <div className="space-y-2">
         <Skeleton className="h-12 w-full" />
         {/* Real payable block: min-h-5 error slot + text-xs reassurance line. */}
@@ -327,38 +336,50 @@ export function TicketDetailSkeleton() {
     <SkeletonShell>
       <Skeleton className="h-5 w-28" />
       <Skeleton className="h-8 w-2/3" />
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          {/* Real code: font-mono text-sm leading-snug (20px line). */}
-          <Skeleton className="h-5 w-32" />
-          <span className="flex shrink-0 items-center gap-1">
-            {/* Real Badge is 22px tall; CopyButton with textLabel is size sm (h-10). */}
-            <Skeleton className="h-[22px] w-16" />
-            <Skeleton className="h-10 w-11" />
-          </span>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="min-h-11 space-y-1">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-5 w-1/2" />
-          </div>
-          {/* Same fixed slot as the real QR box: h-[258px] (224px image +
-              2x16px padding + 2px border). The old aspect-square + max-w-56
-              math undershot on very narrow viewports. */}
-          <div className="h-[258px]">
-            <div className="flex h-full justify-center rounded-none border bg-white p-4">
-              <Skeleton className="size-56" />
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-5 w-2/3" />
+        <Card>
+          <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+            {/* Real code: font-mono text-sm leading-snug (20px line). */}
+            <Skeleton className="h-5 w-32" />
+            <span className="flex shrink-0 items-center gap-1">
+              {/* Real Badge is 22px tall; CopyButton with textLabel is size sm (h-10). */}
+              <Skeleton className="h-[22px] w-16" />
+              <Skeleton className="h-10 w-11" />
+            </span>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="min-h-11 space-y-1">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-5 w-1/2" />
             </div>
-          </div>
-          <div className="rounded-none border border-transparent p-3">
-            <Skeleton className="mx-auto h-9 w-40" />
-            <Skeleton className="mx-auto h-10 w-48" />
-          </div>
-          <Skeleton className="mx-auto h-5 w-56" />
-          <Skeleton className="mx-auto h-5 w-64" />
-          <Skeleton className="h-11 w-full" />
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </section>
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-5 w-2/3" />
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            {/* Same fixed slot as the real QR box: h-[258px] (224px image +
+                2x16px padding + 2px border). The old aspect-square + max-w-56
+                math undershot on very narrow viewports. */}
+            <div className="h-[258px]">
+              <div className="flex h-full justify-center rounded-none border bg-white p-4">
+                <Skeleton className="size-56" />
+              </div>
+            </div>
+            <div className="rounded-none border border-transparent p-3">
+              <Skeleton className="mx-auto h-9 w-40" />
+              <Skeleton className="mx-auto h-10 w-48" />
+            </div>
+            <Skeleton className="mx-auto h-5 w-56" />
+            <Skeleton className="mx-auto h-5 w-64" />
+            <Skeleton className="h-11 w-full" />
+          </CardContent>
+        </Card>
+      </section>
     </SkeletonShell>
   )
 }

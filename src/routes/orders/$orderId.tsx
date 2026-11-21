@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { requireCustomer } from '@/features/auth/route-guard'
 import { useEvent } from '@/features/events/queries'
 import { useCancelOrder, useOrder } from '@/features/orders/queries'
@@ -159,109 +159,123 @@ function OrderDetailPage() {
         Pay here before time runs out. Your ticket appears here once payment is confirmed.
       </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Order summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          {order.status === 'PAID' ? (
-            // PAID occupies the countdown slot with the same three-line shape
-            // (label, large line, muted line) so the card keeps its height
-            // when the countdown unmounts at the moment of success. The PAID
-            // lines measure 16 + 32 + 20 + 8 = 76px (text-2xl = 32px) against
-            // the countdown's 16 + 36 + 20 + 8 = 80px (text-3xl = 36px), so
-            // min-h-[80px] closes the 4px gap on the QUEUED -> PAID flip.
-            <div className="min-h-[80px] space-y-1">
-              <p className="text-xs text-muted-foreground">Payment status</p>
-              <p className="text-2xl font-semibold whitespace-nowrap">Payment received</p>
-              <p className="text-sm text-muted-foreground">Paid {formatCurrency(order.total)}</p>
-            </div>
-          ) : (
-            showCountdown && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Time left to pay</p>
-                {/* The timer line never unmounts: at 0 it reads "Expired" in the
-                    same text-3xl tabular-nums line, so the second -> "Expired"
-                    transition and the <60s colour change move no element. */}
-                <p
-                  role="timer"
-                  className={
-                    urgent || timerExpired
-                      ? 'text-3xl font-semibold tabular-nums whitespace-nowrap text-destructive'
-                      : 'text-3xl font-semibold tabular-nums whitespace-nowrap'
-                  }
-                >
-                  {countdownSeconds !== null ? formatCountdown(countdownSeconds) : 'Expired'}
-                </p>
-                {/* Warning line is always rendered (invisible when not urgent):
-                    it wraps to two lines on narrow screens, and rendering the
-                    same text in both states keeps its height identical, so
-                    crossing the 60s threshold cannot push the summary down. */}
-                <p
-                  aria-hidden={!urgent}
-                  className={
-                    urgent
-                      ? 'font-medium text-destructive'
-                      : 'invisible font-medium text-destructive'
-                  }
-                >
-                  Less than a minute left — pay now or the tickets are released.
-                </p>
+      <section aria-labelledby="payment-heading" className="space-y-4">
+        <h2 id="payment-heading" className="text-lg font-semibold">
+          Payment
+        </h2>
+        <p className="text-sm text-muted-foreground">Countdown and payment status.</p>
+        <Card>
+          <CardContent className="space-y-4 pt-6 text-sm">
+            {order.status === 'PAID' ? (
+              // PAID occupies the countdown slot with the same three-line shape
+              // (label, large line, muted line) so the card keeps its height
+              // when the countdown unmounts at the moment of success. The PAID
+              // lines measure 16 + 32 + 20 + 8 = 76px (text-2xl = 32px) against
+              // the countdown's 16 + 36 + 20 + 8 = 80px (text-3xl = 36px), so
+              // min-h-[80px] closes the 4px gap on the QUEUED -> PAID flip.
+              <div className="min-h-[80px] space-y-1">
+                <p className="text-xs text-muted-foreground">Payment status</p>
+                <p className="text-2xl font-semibold whitespace-nowrap">Payment received</p>
+                <p className="text-sm text-muted-foreground">Paid {formatCurrency(order.total)}</p>
               </div>
-            )
-          )}
-          <div className="space-y-1">
-            {/* Single line: truncate keeps the height fixed when the event
-                name/tier swaps in after useEvent resolves. */}
-            <p className="truncate font-medium">
-              {tier ? `${tier.name} · ` : ''}
-              {event ? (
-                <Link
-                  to="/events/$eventId"
-                  params={{ eventId: order.eventId }}
-                  className="underline underline-offset-4"
-                >
-                  {event.name}
-                </Link>
-              ) : (
-                order.eventId
-              )}
+            ) : (
+              showCountdown && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Time left to pay</p>
+                  {/* The timer line never unmounts: at 0 it reads "Expired" in the
+                      same text-3xl tabular-nums line, so the second -> "Expired"
+                      transition and the <60s colour change move no element. */}
+                  <p
+                    role="timer"
+                    className={
+                      urgent || timerExpired
+                        ? 'text-3xl font-semibold tabular-nums whitespace-nowrap text-destructive'
+                        : 'text-3xl font-semibold tabular-nums whitespace-nowrap'
+                    }
+                  >
+                    {countdownSeconds !== null ? formatCountdown(countdownSeconds) : 'Expired'}
+                  </p>
+                  {/* Warning line is always rendered (invisible when not urgent):
+                      it wraps to two lines on narrow screens, and rendering the
+                      same text in both states keeps its height identical, so
+                      crossing the 60s threshold cannot push the summary down. */}
+                  <p
+                    aria-hidden={!urgent}
+                    className={
+                      urgent
+                        ? 'font-medium text-destructive'
+                        : 'invisible font-medium text-destructive'
+                    }
+                  >
+                    Less than a minute left — pay now or the tickets are released.
+                  </p>
+                </div>
+              )
+            )}
+            {/* Queued line is always rendered (invisible until a payment is
+                queued) so starting a payment cannot push the blocks below the
+                card down. The same text in both states keeps its wrapped
+                height identical. */}
+            <p
+              role="status"
+              aria-hidden={!queued}
+              className={
+                queued
+                  ? 'flex items-center gap-2 text-muted-foreground'
+                  : 'invisible flex items-center gap-2 text-muted-foreground'
+              }
+            >
+              <span
+                className="size-2 shrink-0 animate-pulse rounded-full bg-primary"
+                aria-hidden="true"
+              />
+              Payment processing… Status updates automatically.
             </p>
-            {/* Date line is always rendered (blank while the event loads) so
-                the lines below never drop when useEvent resolves. */}
-            <p className="truncate text-muted-foreground">
-              {event ? `${formatDate(event.startsAt)} · ${event.venue}, ${event.city}` : ' '}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section aria-labelledby="order-summary-heading" className="space-y-4">
+        <h2 id="order-summary-heading" className="text-lg font-semibold">
+          Order summary
+        </h2>
+        <p className="text-sm text-muted-foreground">Event, tier, and total.</p>
+        <Card>
+          <CardContent className="space-y-4 pt-6 text-sm">
+            <div className="space-y-1">
+              {/* Single line: truncate keeps the height fixed when the event
+                  name/tier swaps in after useEvent resolves. */}
+              <p className="truncate font-medium">
+                {tier ? `${tier.name} · ` : ''}
+                {event ? (
+                  <Link
+                    to="/events/$eventId"
+                    params={{ eventId: order.eventId }}
+                    className="underline underline-offset-4"
+                  >
+                    {event.name}
+                  </Link>
+                ) : (
+                  order.eventId
+                )}
+              </p>
+              {/* Date line is always rendered (blank while the event loads) so
+                  the lines below never drop when useEvent resolves. */}
+              <p className="truncate text-muted-foreground">
+                {event ? `${formatDate(event.startsAt)} · ${event.venue}, ${event.city}` : ' '}
+              </p>
+              <p className="truncate text-muted-foreground tabular-nums">
+                {order.quantity}× {formatCurrency(order.unitPrice)} ={' '}
+                <span className="font-medium text-foreground">{formatCurrency(order.total)}</span>
+              </p>
+            </div>
+            <p className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+              <span className="min-w-0 flex-1 truncate">Order {order.id}</span>
+              <CopyButton value={order.id} label="Order ID" />
             </p>
-            <p className="truncate text-muted-foreground tabular-nums">
-              {order.quantity}× {formatCurrency(order.unitPrice)} ={' '}
-              <span className="font-medium text-foreground">{formatCurrency(order.total)}</span>
-            </p>
-          </div>
-          <p className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-            <span className="min-w-0 flex-1 truncate">Order {order.id}</span>
-            <CopyButton value={order.id} label="Order ID" />
-          </p>
-          {/* Queued line is always rendered (invisible until a payment is
-              queued) so starting a payment cannot push the blocks below the
-              card down. The same text in both states keeps its wrapped
-              height identical. */}
-          <p
-            role="status"
-            aria-hidden={!queued}
-            className={
-              queued
-                ? 'flex items-center gap-2 text-muted-foreground'
-                : 'invisible flex items-center gap-2 text-muted-foreground'
-            }
-          >
-            <span
-              className="size-2 shrink-0 animate-pulse rounded-full bg-primary"
-              aria-hidden="true"
-            />
-            Payment processing… Status updates automatically.
-          </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </section>
 
       <div className="space-y-2">
         {payable && !expired ? (
