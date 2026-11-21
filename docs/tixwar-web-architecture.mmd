@@ -11,12 +11,12 @@ flowchart TB
 
     subgraph S2["2. App Shell, src/routes/__root.tsx"]
         direction TB
-        ROOT["__root.tsx<br/>QueryClientProvider and ThemeProvider"]
+        ROOT["__root.tsx<br/>QueryClientProvider, ThemeProvider,<br/>TourProvider wraps the shell"]
         BAR["Floating bottom bar<br/>menu follows the user role"]
         HEAD["Slim header<br/>logo, theme toggle, sign in and out"]
-        TOAST["Sonner top-right<br/>success and error notifications"]
+        TOAST["Sonner top-right, 80px from top<br/>success and error notifications"]
         SKEL["Per-route skeleton<br/>mirrors the page's real layout"]
-        TEMA["Sera and Mist themes<br/>green primary, red destructive<br/>Plus Jakarta Sans Variable font"]
+        TEMA["Sera and Mist themes<br/>green primary, red destructive<br/>Plus Jakarta Sans Variable font<br/>theme change: circular wipe 500ms<br/>fade fallback 300ms"]
     end
 
     subgraph S3["3. Routes, file-based TanStack Router"]
@@ -37,7 +37,7 @@ flowchart TB
             direction TB
             G_CUST["requireCustomer<br/>admins redirected to /"]
             R_ORDERS["/orders<br/>order list"]
-            R_ORDER["/orders/$orderId<br/>order detail and payment"]
+            R_ORDER["/orders/$orderId<br/>order detail<br/>Payment and Order summary sections"]
             R_TICKETS["/tickets<br/>ticket list"]
             R_TICKET["/tickets/$ticketId<br/>ticket and QR code"]
         end
@@ -45,7 +45,7 @@ flowchart TB
         subgraph S3C["Signed in, all roles"]
             direction TB
             G_AUTH["requireAuth<br/>not signed in redirected to /login"]
-            R_SETTINGS["/settings<br/>account and Developer"]
+            R_SETTINGS["/settings<br/>Account, Onboarding, and Developer"]
             R_APIKEYS["/api-keys<br/>manage API keys"]
         end
 
@@ -58,7 +58,7 @@ flowchart TB
 
     subgraph S4["4. Features, src/features"]
         direction TB
-        F_AUTH["auth<br/>POST /v1/auth/login and register<br/>refresh, logout, forgot password"]
+        F_AUTH["auth<br/>POST /v1/auth/login and register<br/>refresh, logout, forgot password<br/>Zod errors as plain inline messages"]
         F_EVENTS["events<br/>GET /v1/events and /v1/events/{id}<br/>plus /stats"]
         F_ORDERS["orders<br/>GET and POST /v1/orders<br/>cancel order"]
         F_PAY["payments<br/>POST /v1/orders/{id}/pay"]
@@ -66,6 +66,7 @@ flowchart TB
         F_KEYS["api-keys<br/>GET, POST, and DELETE /v1/api-keys"]
         F_DEBUG["debug<br/>POST /debug/load and /debug/chaos"]
         F_RT["realtime<br/>stock and order-status stream"]
+        F_ONB["onboarding<br/>guided tour, 5 steps on /events<br/>auto-start first visit, replay from Settings"]
     end
 
     subgraph S5["5. Data Layer, src/lib"]
@@ -75,6 +76,7 @@ flowchart TB
         INT["Interceptor in lib/api.ts<br/>401 then refresh token<br/>and retry request"]
         SSE["lib/sse.ts<br/>connects the SSE stream"]
         SES["Session stored in the browser<br/>localStorage when remember me<br/>sessionStorage otherwise"]
+        DOC["lib/document-title.ts<br/>browser tab title per page, 13 pages"]
     end
 
     subgraph S6["6. TixWar API"]
@@ -118,6 +120,8 @@ flowchart TB
     R_TICKETS --> F_TICK
     R_TICKET --> F_TICK
     R_SETTINGS --> F_KEYS
+    R_SETTINGS --> F_ONB
+    R_EVENTS --> F_ONB
     R_APIKEYS --> F_KEYS
     R_DEBUG --> F_DEBUG
     R_DEBUG --> F_RT
