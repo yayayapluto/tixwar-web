@@ -1,0 +1,146 @@
+%% TixWar Web Architecture
+%% Vite + React 19 + TanStack Router + TanStack Query
+%% Fact sources: tixwar-web repo (src/routes, src/features, src/lib, DESIGN.md, vite.config.ts)
+flowchart TB
+    T["TixWar Web Architecture<br/>Vite + React 19 + TanStack Router + TanStack Query"]
+
+    subgraph S1["1. User Browser"]
+        direction TB
+        U["User<br/>opens the app in the browser"]
+    end
+
+    subgraph S2["2. App Shell, src/routes/__root.tsx"]
+        direction TB
+        ROOT["__root.tsx<br/>QueryClientProvider and ThemeProvider"]
+        BAR["Floating bottom bar<br/>menu follows the user role"]
+        HEAD["Slim header<br/>logo, theme toggle, sign in and out"]
+        TOAST["Sonner bottom-right<br/>success and error notifications"]
+        SKEL["Per-route skeleton<br/>mirrors the page's real layout"]
+        TEMA["Nova and Mist themes<br/>green primary, red destructive<br/>Plus Jakarta Sans Variable font"]
+    end
+
+    subgraph S3["3. Routes, file-based TanStack Router"]
+        direction TB
+
+        subgraph S3A["Public"]
+            direction TB
+            R_HOME["/ redirects to /events"]
+            R_EVENTS["/events<br/>event list, infinite scroll"]
+            R_DETAIL["/events/$eventId<br/>event detail, tiers, remaining stock"]
+            R_LOGIN["/login"]
+            R_REG["/register"]
+            R_FORGOT["/forgot-password"]
+            R_RESET["/reset-password"]
+        end
+
+        subgraph S3B["Signed-in customer"]
+            direction TB
+            G_CUST["requireCustomer<br/>admins redirected to /"]
+            R_ORDERS["/orders<br/>order list"]
+            R_ORDER["/orders/$orderId<br/>order detail and payment"]
+            R_TICKETS["/tickets<br/>ticket list"]
+            R_TICKET["/tickets/$ticketId<br/>ticket and QR code"]
+        end
+
+        subgraph S3C["Signed in, all roles"]
+            direction TB
+            G_AUTH["requireAuth<br/>not signed in redirected to /login"]
+            R_SETTINGS["/settings<br/>account and Developer"]
+            R_APIKEYS["/api-keys<br/>manage API keys"]
+        end
+
+        subgraph S3D["Admin only"]
+            direction TB
+            G_ADMIN["requireAdmin<br/>non-admins redirected to /"]
+            R_DEBUG["/debug/stream<br/>live traces and load testing"]
+        end
+    end
+
+    subgraph S4["4. Features, src/features"]
+        direction TB
+        F_AUTH["auth<br/>POST /v1/auth/login and register<br/>refresh, logout, forgot password"]
+        F_EVENTS["events<br/>GET /v1/events and /v1/events/{id}<br/>plus /stats"]
+        F_ORDERS["orders<br/>GET and POST /v1/orders<br/>cancel order"]
+        F_PAY["payments<br/>POST /v1/orders/{id}/pay"]
+        F_TICK["tickets<br/>GET /v1/tickets and /v1/tickets/{id}"]
+        F_KEYS["api-keys<br/>GET, POST, and DELETE /v1/api-keys"]
+        F_DEBUG["debug<br/>POST /debug/load and /debug/chaos"]
+        F_RT["realtime<br/>stock and order-status stream"]
+    end
+
+    subgraph S5["5. Data Layer, src/lib"]
+        direction TB
+        Q["TanStack Query<br/>cache, refetch, and mutations"]
+        GEN["@/lib/client<br/>generated client<br/>bun run api:gen from openapi.json"]
+        INT["Interceptor in lib/api.ts<br/>401 then refresh token<br/>and retry request"]
+        SSE["lib/sse.ts<br/>connects the SSE stream"]
+        SES["Session stored in the browser<br/>localStorage when remember me<br/>sessionStorage otherwise"]
+    end
+
+    subgraph S6["6. TixWar API"]
+        direction TB
+        API["TixWar API<br/>bore.pub:50430<br/>VITE_API_BASE_URL"]
+        API_NOTE["Vite runs on port 3000<br/>API outside this web repo"]
+    end
+
+    subgraph S7["7. Buy Ticket Flow"]
+        direction TB
+        B1["1. Choose a tier on the event detail"]
+        B2["2. Create order<br/>POST /v1/orders"]
+        B3["3. Pay for the order<br/>POST /v1/orders/{id}/pay"]
+        B4["4. Order status follows the SSE stream<br/>GET /v1/orders/{id}/stream"]
+        B5["5. Ticket and QR code shown<br/>at /tickets/$ticketId"]
+    end
+
+    U -- opens the app --> ROOT
+    ROOT --> R_HOME
+    R_HOME -- redirects --> R_EVENTS
+
+    G_CUST --> R_ORDERS
+    G_CUST --> R_ORDER
+    G_CUST --> R_TICKETS
+    G_CUST --> R_TICKET
+    G_AUTH --> R_SETTINGS
+    G_AUTH --> R_APIKEYS
+    G_ADMIN --> R_DEBUG
+
+    R_EVENTS --> F_EVENTS
+    R_DETAIL --> F_EVENTS
+    R_DETAIL --> F_RT
+    R_LOGIN --> F_AUTH
+    R_REG --> F_AUTH
+    R_FORGOT --> F_AUTH
+    R_RESET --> F_AUTH
+    R_ORDERS --> F_ORDERS
+    R_ORDER --> F_ORDERS
+    R_ORDER --> F_PAY
+    R_ORDER --> F_RT
+    R_TICKETS --> F_TICK
+    R_TICKET --> F_TICK
+    R_SETTINGS --> F_KEYS
+    R_APIKEYS --> F_KEYS
+    R_DEBUG --> F_DEBUG
+    R_DEBUG --> F_RT
+
+    F_AUTH --> Q
+    F_EVENTS --> Q
+    F_ORDERS --> Q
+    F_PAY --> Q
+    F_TICK --> Q
+    F_KEYS --> Q
+    F_DEBUG --> Q
+    F_RT --> SSE
+    F_DEBUG --> SSE
+    Q -- calls the client --> GEN
+    GEN -- via interceptor --> INT
+    INT -- HTTP and Bearer --> API
+    SSE -- SSE stream --> API
+
+    F_AUTH -- stores session --> SES
+    SES -- access token --> INT
+
+    R_DETAIL -- user picks a tier --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5

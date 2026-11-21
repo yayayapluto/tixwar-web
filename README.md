@@ -6,6 +6,12 @@ Users browse events, reserve ticket tiers inside their sale windows, pay or canc
 view issued tickets with QR codes. API-key management is available to signed-in users; admins
 also get a debug dashboard with load generation, chaos injection, and a live trace stream.
 
+## Architecture
+
+![TixWar Web Architecture](assets/tixwar-web-architecture.png)
+
+Architecture diagram source (Mermaid): [`docs/tixwar-web-architecture.mmd`](docs/tixwar-web-architecture.mmd).
+
 ## Stack
 
 - Vite + React 19 + TypeScript (strict)
