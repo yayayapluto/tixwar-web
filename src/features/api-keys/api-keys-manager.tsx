@@ -297,7 +297,7 @@ export function ApiKeysManager() {
         </CardHeader>
         <CardContent className="space-y-2">
           <form
-            className="flex flex-wrap items-end gap-2"
+            className="space-y-2"
             onSubmit={(e) => {
               e.preventDefault()
               const expiresAt =
@@ -320,33 +320,35 @@ export function ApiKeysManager() {
               )
             }}
           >
-            <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor="key-name">Key name</Label>
-              <Input
-                id="key-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Key name"
-                required
-              />
-            </div>
-            <div className="w-44 shrink-0 space-y-2">
-              <Label htmlFor="key-expiry">Expiry</Label>
-              <Select value={expiry} onValueChange={(value) => setExpiry(value as typeof expiry)}>
-                <SelectTrigger id="key-expiry" aria-label="Expiry">
-                  <SelectValue placeholder="Expiry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="never">No expiry</SelectItem>
-                  <SelectItem value="7">Expires in 7 days</SelectItem>
-                  <SelectItem value="30">Expires in 30 days</SelectItem>
-                  <SelectItem value="90">Expires in 90 days</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor="key-name">Key name</Label>
+                <Input
+                  id="key-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Key name"
+                  required
+                />
+              </div>
+              <div className="w-44 shrink-0 space-y-2">
+                <Label htmlFor="key-expiry">Expiry</Label>
+                <Select value={expiry} onValueChange={(value) => setExpiry(value as typeof expiry)}>
+                  <SelectTrigger id="key-expiry" aria-label="Expiry">
+                    <SelectValue placeholder="Expiry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">No expiry</SelectItem>
+                    <SelectItem value="7">Expires in 7 days</SelectItem>
+                    <SelectItem value="30">Expires in 30 days</SelectItem>
+                    <SelectItem value="90">Expires in 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               type="submit"
-              className="w-28 shrink-0"
+              className="w-full"
               disabled={create.isPending || trimmedName.length === 0}
             >
               {create.isPending ? 'Creating…' : 'Create'}

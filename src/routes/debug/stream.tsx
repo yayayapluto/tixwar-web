@@ -555,16 +555,16 @@ function DebugPage() {
       </Card>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Load generator</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-1 flex-col">
             <LoadGeneratorForm />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle>Chaos injection</CardTitle>
@@ -579,7 +579,7 @@ function DebugPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-1 flex-col space-y-3">
             <Alert
               role="note"
               className={cn(
@@ -667,7 +667,11 @@ function DebugPage() {
                 </p>
               )}
             </div>
-            <Button onClick={handleApplyClick} disabled={chaos.isPending} className="w-full">
+            <Button
+              onClick={handleApplyClick}
+              disabled={chaos.isPending}
+              className="mt-auto w-full"
+            >
               {chaos.isPending ? 'Applying…' : 'Apply chaos'}
             </Button>
           </CardContent>

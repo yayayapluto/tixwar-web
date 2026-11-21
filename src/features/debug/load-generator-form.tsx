@@ -192,7 +192,7 @@ export function LoadGeneratorForm({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-1 flex-col space-y-3">
       <div className="space-y-2">
         <Label htmlFor="scenario">Scenario</Label>
         <Select
@@ -285,17 +285,6 @@ export function LoadGeneratorForm({
           </p>
         )}
       </div>
-      {running ? (
-        <Button onClick={cancelLoad} variant="outline" className="w-full">
-          <X className="size-4" aria-hidden="true" />
-          Cancel run
-        </Button>
-      ) : (
-        <Button onClick={runLoad} className="w-full">
-          <Activity className="size-4" aria-hidden="true" />
-          Run load
-        </Button>
-      )}
       <div className="min-h-12 sm:min-h-8">
         {running ? (
           <p className="text-xs text-muted-foreground tabular-nums" role="status">
@@ -318,6 +307,17 @@ export function LoadGeneratorForm({
           )
         )}
       </div>
+      {running ? (
+        <Button onClick={cancelLoad} variant="outline" className="mt-auto w-full">
+          <X className="size-4" aria-hidden="true" />
+          Cancel run
+        </Button>
+      ) : (
+        <Button onClick={runLoad} className="mt-auto w-full">
+          <Activity className="size-4" aria-hidden="true" />
+          Run load
+        </Button>
+      )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
