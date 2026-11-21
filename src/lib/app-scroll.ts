@@ -8,6 +8,6 @@ export const appScrollViewportRef: RefObject<HTMLDivElement | null> = {
   current: null,
 }
 
-export function scrollAppToTop(behavior: ScrollBehavior = 'auto') {
+export function scrollAppToTop(behavior: ScrollBehavior = 'instant') {
   appScrollViewportRef.current?.scrollTo({ top: 0, behavior })
 }
