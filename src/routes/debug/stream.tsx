@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { DebugPageSkeleton, TraceListSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
+import { Alert } from '@/components/ui/alert'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,7 @@ import { type ChaosStateOverview, getDebugChaos, getDebugStream } from '@/lib/cl
 import { ApiError } from '@/lib/errors'
 import { useSse } from '@/lib/sse'
 import { toast } from '@/lib/toast'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/debug/stream')({
   beforeLoad: () => {
@@ -378,18 +380,15 @@ function DebugPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Debug dashboard</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="min-h-15 text-sm text-muted-foreground sm:min-h-10">
           Live request traces, load tests and chaos injection. Ask the API owner to enable debug
           mode.
         </p>
       </div>
 
-      <div className="min-h-[114px] sm:min-h-[66px]">
+      <div className="min-h-[114px] sm:min-h-[106px]">
         {activeChaosTargets.length > 0 && (
-          <div
-            role="status"
-            className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
-          >
+          <Alert variant="destructive" role="status" className="space-y-2 rounded-xl p-3">
             {activeChaosTargets.map((target) => (
               <div key={target.target} className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-medium text-destructive tabular-nums">
@@ -406,7 +405,7 @@ function DebugPage() {
                 </Button>
               </div>
             ))}
-          </div>
+          </Alert>
         )}
       </div>
 
@@ -433,8 +432,12 @@ function DebugPage() {
                     ? 'Paused'
                     : 'Connecting…'}
             </Badge>
-            <Badge variant="secondary" className="min-w-12 shrink-0 justify-center tabular-nums">
-              {totalReceived}
+            <Badge
+              variant="secondary"
+              className="min-w-12 shrink-0 justify-center tabular-nums"
+              title={totalReceived > 9999 ? String(totalReceived) : undefined}
+            >
+              {totalReceived > 9999 ? '9999+' : totalReceived}
             </Badge>
             <div className="ml-auto flex items-center gap-2">
               <Button
@@ -490,9 +493,10 @@ function DebugPage() {
 
           <div className="min-h-[114px] sm:min-h-[66px]">
             {connectionStatus === 'error' && traces.length > 0 ? (
-              <div
+              <Alert
+                variant="destructive"
                 role="alert"
-                className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+                className="flex flex-wrap items-center gap-2 rounded-xl p-3"
               >
                 <p className="text-sm font-medium text-destructive">
                   Stream disconnected — new traces are not arriving.
@@ -500,7 +504,7 @@ function DebugPage() {
                 <Button variant="outline" size="sm" className="ml-auto" onClick={retryStream}>
                   Retry
                 </Button>
-              </div>
+              </Alert>
             ) : null}
           </div>
 
@@ -576,13 +580,12 @@ function DebugPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div
+            <Alert
               role="note"
-              className={
-                chaosState.isError
-                  ? 'rounded-lg border border-amber-500/40 bg-amber-500/10 p-3'
-                  : 'rounded-lg border p-3'
-              }
+              className={cn(
+                'min-h-14 rounded-lg bg-transparent p-3',
+                chaosState.isError && 'border-amber-500/40 bg-amber-500/10',
+              )}
             >
               <p
                 className={
@@ -593,7 +596,7 @@ function DebugPage() {
               >
                 {chaosNote}
               </p>
-            </div>
+            </Alert>
             <div className="space-y-2">
               <Label htmlFor="target">Target</Label>
               <Select
@@ -657,7 +660,7 @@ function DebugPage() {
                 {CHAOS_VALUE_HINT[chaosForm.action].label}
               </p>
             </div>
-            <div className="min-h-4">
+            <div className="min-h-8 sm:min-h-4">
               {chaosError && (
                 <p role="alert" className="text-xs text-destructive">
                   {chaosError}

@@ -1,4 +1,5 @@
 import { AlertTriangle, Inbox } from 'lucide-react'
+import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/errors'
@@ -22,9 +23,10 @@ export function ErrorState({
   const message = error instanceof ApiError ? error.detail : fallbackTitle
   const retryAfter = error instanceof ApiError ? error.retryAfterSeconds : undefined
   return (
-    <div
+    <Alert
+      variant="destructive"
       role="alert"
-      className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center"
+      className="flex flex-col items-center justify-center gap-3 rounded-xl p-8 text-center"
     >
       <AlertTriangle className="animate-shake-once size-8 text-destructive" aria-hidden="true" />
       <p className="text-sm font-medium text-destructive">{message}</p>
@@ -36,7 +38,7 @@ export function ErrorState({
           {retryLabel}
         </Button>
       )}
-    </div>
+    </Alert>
   )
 }
 

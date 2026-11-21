@@ -278,7 +278,7 @@ export function LoadGeneratorForm({
           />
         </div>
       </div>
-      <div className="min-h-4">
+      <div className="min-h-8 sm:min-h-4">
         {error && (
           <p role="alert" className="text-xs text-destructive">
             {error}
@@ -296,7 +296,7 @@ export function LoadGeneratorForm({
           Run load
         </Button>
       )}
-      <div className="min-h-8">
+      <div className="min-h-12 sm:min-h-8">
         {running ? (
           <p className="text-xs text-muted-foreground tabular-nums" role="status">
             Running {form.scenario} · {form.requests ?? 0} requests · concurrency{' '}

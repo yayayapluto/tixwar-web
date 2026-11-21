@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { TicketDetailSkeleton } from '@/components/skeletons'
 import { ErrorState } from '@/components/status'
+import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -196,14 +197,17 @@ function TicketDetailPage() {
               <Skeleton className="h-5 w-1/2" />
             </div>
           ) : eventQuery.isError ? (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <Alert
+              variant="destructive"
+              className="flex items-center justify-between gap-2 rounded-lg p-3"
+            >
               <p className="text-sm text-destructive">
                 Acara tidak dapat dimuat. QR di bawah tetap valid.
               </p>
               <Button variant="outline" size="sm" onClick={() => eventQuery.refetch()}>
                 Coba lagi
               </Button>
-            </div>
+            </Alert>
           ) : event ? (
             // min-h-11 reserves both rows (44px) even when the ticket
             // has no tier, so the QR box below never moves.
@@ -225,9 +229,10 @@ function TicketDetailPage() {
           */}
           <div className="h-[258px]">
             {qrExpired || qrError ? (
-              <div
+              <Alert
+                variant="destructive"
                 role="alert"
-                className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
+                className="flex h-full flex-col items-center justify-center gap-2 rounded-lg p-6 text-center"
               >
                 <p className="text-sm font-medium text-destructive">
                   {refetchError
@@ -239,7 +244,7 @@ function TicketDetailPage() {
                 <p className="text-sm text-destructive/80">
                   Kalau QR tidak terbaca, tunjukkan kode tiket di atas ke petugas.
                 </p>
-              </div>
+              </Alert>
             ) : (
               <div className="flex h-full justify-center rounded-lg border bg-white p-4">
                 {/* White background is required for QR scannability */}
