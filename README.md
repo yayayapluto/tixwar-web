@@ -12,6 +12,21 @@ also get a debug dashboard with load generation, chaos injection, and a live tra
 
 Architecture diagram source (Mermaid): [`docs/tixwar-web-architecture.mmd`](docs/tixwar-web-architecture.mmd).
 
+## Minimum Specs
+
+Figures below are **estimates** for local development, not measured numbers: the repo ships no
+Dockerfile and no resource limits, so they are reasoned from the stack, not benchmarked.
+
+| Setup  | CPU    | RAM  | Disk |
+| ------ | ------ | ---- | ---- |
+| Docker | 1 vCPU | 1 GB | 2 GB |
+| Podman | 1 vCPU | 1 GB | 2 GB |
+| Native | 1 vCPU | 1 GB | 2 GB |
+
+- **Docker** — no Dockerfile is shipped. Build the production output (`bun run build` → `dist/`) into an image and serve it with nginx or `vite preview`. The web needs a reachable API: set `VITE_API_BASE_URL` and make sure the API's `CORS_ORIGINS` includes the web origin.
+- **Podman** — same as Docker. In this project's VM, rootful Podman with `--network host` is the setup that works; rootless Podman did not.
+- **Native** — Bun `>= 1.3`. `bun run dev` serves on port 3000. Requires a running TixWar API (default `http://localhost:8080`) with CORS allowing the web origin; see Prerequisites.
+
 ## Stack
 
 - Vite + React 19 + TypeScript (strict)
