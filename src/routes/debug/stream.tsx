@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Activity, ChevronDown } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
@@ -30,7 +31,7 @@ import {
 import { requireAdmin } from '@/features/auth/route-guard'
 import { LoadGeneratorForm } from '@/features/debug/load-generator-form'
 import { type DebugChaosRequest, useDebugChaos } from '@/features/debug/queries'
-import { getDebugStream } from '@/lib/client'
+import { type ChaosStateOverview, getDebugChaos, getDebugStream } from '@/lib/client'
 import { ApiError } from '@/lib/errors'
 import { useSse } from '@/lib/sse'
 import { toast } from '@/lib/toast'
@@ -134,6 +135,35 @@ function chaosSummary(request: DebugChaosRequest): string {
   return `${request.target} ${request.action}${value}`
 }
 
+type ChaosTargetState = ChaosStateOverview['targets'][number]
+
+// The state endpoint only reports the keys that apply to each target, so
+// pick the human-readable ones and ignore the rest.
+function chaosDetailSummary(detail: Record<string, unknown>): string | null {
+  const parts: string[] = []
+  const remainingMs =
+    typeof detail.remainingMs === 'number'
+      ? detail.remainingMs
+      : typeof detail.autoRecoverAfterMs === 'number'
+        ? detail.autoRecoverAfterMs
+        : undefined
+  if (remainingMs !== undefined) parts.push(`recovers in ${Math.round(remainingMs / 1000)}s`)
+  const failureRatePercent =
+    typeof detail.failureRatePercent === 'number'
+      ? detail.failureRatePercent
+      : typeof detail.errorRatePercent === 'number'
+        ? detail.errorRatePercent
+        : undefined
+  if (failureRatePercent !== undefined) parts.push(`${failureRatePercent}% of calls fail`)
+  if (typeof detail.latencyMs === 'number') parts.push(`${detail.latencyMs} ms delay`)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+function chaosTargetSummary(target: ChaosTargetState): string {
+  const detail = chaosDetailSummary(target.detail)
+  return `${target.target} ${target.action ?? 'active'}${detail ? ` (${detail})` : ''}`
+}
+
 function validateChaos(form: DebugChaosRequest): string | null {
   if (form.action === 'recover') return null
   const value = form.value
@@ -145,13 +175,6 @@ function validateChaos(form: DebugChaosRequest): string | null {
     return 'Value must be between 1 and 100 for this action.'
   }
   return null
-}
-
-type ActiveChaos = {
-  target: DebugChaosRequest['target']
-  action: ChaosAction
-  value?: number
-  autoRecoverMs?: number
 }
 
 function TraceRow({ trace }: { trace: Trace }) {
@@ -218,6 +241,23 @@ function TraceRow({ trace }: { trace: Trace }) {
 
 function DebugPage() {
   const chaos = useDebugChaos()
+  // Read live from the API on mount, so a refresh shows chaos set elsewhere
+  // instead of only what this page applied itself.
+  const chaosState = useQuery({
+    queryKey: ['debug', 'chaos'],
+    queryFn: async () => (await getDebugChaos({ throwOnError: true })).data,
+  })
+  const activeChaosTargets = useMemo(
+    () => (chaosState.data?.targets ?? []).filter((t) => t.active),
+    [chaosState.data],
+  )
+  const chaosNote = chaosState.isPending
+    ? 'Checking the current chaos state…'
+    : chaosState.isError
+      ? 'Chaos state unknown — the last check failed, so do not assume the sale is clean.'
+      : activeChaosTargets.length > 0
+        ? `Live state: ${activeChaosTargets.map((t) => chaosTargetSummary(t)).join(', ')}.`
+        : 'Live state: no chaos active.'
   const [traces, setTraces] = useState<Trace[]>([])
   const [totalReceived, setTotalReceived] = useState(0)
   const idRef = useRef(0)
@@ -233,7 +273,6 @@ function DebugPage() {
   })
   const [chaosError, setChaosError] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [activeChaos, setActiveChaos] = useState<ActiveChaos | null>(null)
 
   const sseStatus = useSse(streaming, [retryKey], (signal) =>
     getDebugStream({
@@ -301,21 +340,12 @@ function DebugPage() {
           toast('Chaos was not applied. Check the service and try again.')
           return
         }
+        // The banner reads the server state, so re-read it after every apply.
+        void chaosState.refetch()
         if (request.action === 'recover') {
-          setActiveChaos(null)
           toast(`Chaos recovered on ${request.target}`, { variant: 'success' })
           return
         }
-        const autoRecoverMs =
-          typeof state.detail.autoRecoverAfterMs === 'number'
-            ? state.detail.autoRecoverAfterMs
-            : undefined
-        setActiveChaos({
-          target: request.target,
-          action: request.action,
-          value: request.value,
-          autoRecoverMs,
-        })
         toast(`Chaos applied: ${chaosSummary(request)}`, { variant: 'success' })
       },
       onError: toastMutationError,
@@ -349,30 +379,33 @@ function DebugPage() {
       <div>
         <h1 className="text-2xl font-semibold">Debug dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Live request traces, load tests and chaos injection. The API must have DEBUG_ENABLED on.
+          Live request traces, load tests and chaos injection. Ask the API owner to enable debug
+          mode.
         </p>
       </div>
 
       <div className="min-h-[114px] sm:min-h-[66px]">
-        {activeChaos && (
+        {activeChaosTargets.length > 0 && (
           <div
             role="status"
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+            className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
           >
-            <p className="text-sm font-medium text-destructive tabular-nums">
-              Chaos active: {chaosSummary(activeChaos)}
-              {activeChaos.autoRecoverMs !== undefined &&
-                ` · recovers automatically after ${Math.round(activeChaos.autoRecoverMs / 1000)}s`}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-              onClick={() => applyChaos({ target: activeChaos.target, action: 'recover' })}
-              disabled={chaos.isPending}
-            >
-              Recover {activeChaos.target}
-            </Button>
+            {activeChaosTargets.map((target) => (
+              <div key={target.target} className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium text-destructive tabular-nums">
+                  Chaos active: {chaosTargetSummary(target)}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => applyChaos({ target: target.target, action: 'recover' })}
+                  disabled={chaos.isPending}
+                >
+                  Recover {target.target}
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -425,7 +458,7 @@ function DebugPage() {
           </div>
           <CardDescription className="min-h-10 tabular-nums">
             {totalReceived > traces.length
-              ? `Menampilkan ${traces.length} dari ${totalReceived} trace`
+              ? `Showing ${traces.length} of ${totalReceived} traces`
               : `${totalReceived} trace received`}
             {filtering && ` · ${filteredTraces.length} of ${traces.length} match the filter`}
           </CardDescription>
@@ -529,13 +562,36 @@ function DebugPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Chaos injection</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle>Chaos injection</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => void chaosState.refetch()}
+                disabled={chaosState.isFetching}
+              >
+                Check current state
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div role="note" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
-              <p className="text-xs text-amber-800 dark:text-amber-200">
-                Chaos state is not shown after a refresh — verify on the API before assuming the
-                sale is clean.
+            <div
+              role="note"
+              className={
+                chaosState.isError
+                  ? 'rounded-lg border border-amber-500/40 bg-amber-500/10 p-3'
+                  : 'rounded-lg border p-3'
+              }
+            >
+              <p
+                className={
+                  chaosState.isError
+                    ? 'text-xs text-amber-800 dark:text-amber-200'
+                    : 'text-xs text-muted-foreground'
+                }
+              >
+                {chaosNote}
               </p>
             </div>
             <div className="space-y-2">
