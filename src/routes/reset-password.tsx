@@ -10,6 +10,7 @@ import { AuthFormError, MIN_PASSWORD_LENGTH } from '@/features/auth/auth-form'
 import { useResetPassword } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
 import { ApiError } from '@/lib/errors'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/reset-password')({
   validateSearch: (search: Record<string, unknown>): { token?: string } => {
@@ -69,14 +70,15 @@ function ResetPasswordPage() {
             Choose a new password for your account. Links expire after 1 hour. If this link is old,
             request a new one.
           </CardDescription>
-          {!done && token && (
-            <p className="text-sm text-muted-foreground">
-              Use the password for the account this link was sent to.
-            </p>
-          )}
+          <p
+            aria-hidden={done || !token}
+            className={cn('min-h-5 text-sm text-muted-foreground', (done || !token) && 'invisible')}
+          >
+            Use the password for the account this link was sent to.
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="min-h-[212px]">
+          <div className="min-h-[348px]">
             {done ? (
               <div className="space-y-4">
                 <p role="status" className="text-sm">
