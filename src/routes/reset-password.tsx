@@ -27,11 +27,14 @@ function ResetPasswordPage() {
   const reset = useResetPassword()
   const { token } = Route.useSearch()
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
   const tokenExpired = reset.error instanceof ApiError && reset.error.status === 401
+  const passwordsMismatch = confirmPassword.length > 0 && confirmPassword !== password
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -40,6 +43,8 @@ function ResetPasswordPage() {
       setClientError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
     }
+    // The mismatch is already shown live under the confirm field.
+    if (passwordsMismatch) return
     setClientError(null)
     reset.mutate({ token, password }, { onSuccess: () => setDone(true) })
   }
@@ -49,7 +54,15 @@ function ResetPasswordPage() {
       <Card>
         <CardHeader>
           <CardTitle>Reset password</CardTitle>
-          <CardDescription>Choose a new password for your account.</CardDescription>
+          <CardDescription>
+            Choose a new password for your account. Links expire after 1 hour. If this link is old,
+            request a new one.
+          </CardDescription>
+          {!done && token && (
+            <p className="text-sm text-muted-foreground">
+              Use the password for the account this link was sent to.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <div className="min-h-[212px]">
@@ -83,7 +96,7 @@ function ResetPasswordPage() {
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
-                      enterKeyHint="go"
+                      enterKeyHint="next"
                       autoComplete="new-password"
                       aria-describedby="password-hint"
                       autoFocus
@@ -122,6 +135,56 @@ function ResetPasswordPage() {
                     At least {MIN_PASSWORD_LENGTH} characters.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm new password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      enterKeyHint="go"
+                      autoComplete="new-password"
+                      aria-describedby="confirm-password-hint"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value)
+                        setClientError(null)
+                      }}
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      aria-label={showConfirmPassword ? 'Hide confirmation' : 'Show confirmation'}
+                      className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff
+                          key="hide"
+                          className="size-4 animate-in duration-150 ease-out fade-in"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Eye
+                          key="show"
+                          className="size-4 animate-in duration-150 ease-out fade-in"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </Button>
+                  </div>
+                  <p id="confirm-password-hint" className="min-h-4 text-xs text-muted-foreground">
+                    {passwordsMismatch ? (
+                      <span role="alert" className="text-destructive">
+                        Passwords don&apos;t match.
+                      </span>
+                    ) : (
+                      'Re-enter your new password.'
+                    )}
+                  </p>
+                </div>
                 <div className="min-h-10">
                   {clientError ? (
                     <p role="alert" className="text-sm text-destructive">
@@ -145,6 +208,12 @@ function ResetPasswordPage() {
                 <Button type="submit" className="w-full" disabled={reset.isPending}>
                   {reset.isPending ? 'Loading…' : 'Reset password'}
                 </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Remembered it?{' '}
+                  <Link to="/login" className="underline underline-offset-4">
+                    Log in
+                  </Link>
+                </p>
               </form>
             )}
           </div>

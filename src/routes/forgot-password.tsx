@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { type FormEvent, useState } from 'react'
+import { CheckCircle2 } from 'lucide-react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { AuthPageSkeleton } from '@/components/skeletons'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { AuthFormError } from '@/features/auth/auth-form'
 import { useForgotPassword } from '@/features/auth/use-auth'
 import { getSession } from '@/lib/auth'
+
+const RESEND_COOLDOWN_SECONDS = 60
 
 export const Route = createFileRoute('/forgot-password')({
   beforeLoad: () => {
@@ -21,29 +24,106 @@ function ForgotPasswordPage() {
   const forgot = useForgotPassword()
   const [email, setEmail] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const successRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (sentTo) successRef.current?.focus()
+  }, [sentTo])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown((s) => s - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    forgot.mutate({ email }, { onSuccess: () => setSentTo(email) })
+    const trimmedEmail = email.trim()
+    forgot.mutate(
+      { email: trimmedEmail },
+      {
+        onSuccess: () => {
+          setSentTo(trimmedEmail)
+          setResendCooldown(RESEND_COOLDOWN_SECONDS)
+        },
+      },
+    )
+  }
+
+  function handleResend() {
+    if (!sentTo || resendCooldown > 0) return
+    forgot.mutate(
+      { email: sentTo },
+      { onSuccess: () => setResendCooldown(RESEND_COOLDOWN_SECONDS) },
+    )
+  }
+
+  function handleDifferentEmail() {
+    setSentTo(null)
+    setResendCooldown(0)
   }
 
   return (
     <div className="mx-auto max-w-sm pt-8">
       <Card>
         <CardHeader>
-          <CardTitle>Forgot password</CardTitle>
-          <CardDescription>
-            Enter your email and we&apos;ll send you a link to reset your password.
-          </CardDescription>
+          {sentTo ? (
+            <>
+              <CardTitle>Check your email</CardTitle>
+              <CardDescription>We sent a reset link to {sentTo}.</CardDescription>
+            </>
+          ) : (
+            <>
+              <CardTitle>Forgot password</CardTitle>
+              <CardDescription>
+                Enter your email and we&apos;ll send you a link to reset your password.
+              </CardDescription>
+            </>
+          )}
         </CardHeader>
         <CardContent>
           <div className="min-h-56">
             {sentTo ? (
-              <div className="space-y-4">
-                <p role="status" className="text-sm">
-                  Check your inbox — if an account exists for {sentTo}, we&apos;ve sent a reset
-                  link. The link expires in 1 hour.
+              <div ref={successRef} tabIndex={-1} className="space-y-4 outline-none">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2
+                    className="mt-0.5 size-5 shrink-0 text-primary"
+                    aria-hidden="true"
+                  />
+                  <p role="status" className="text-sm">
+                    Check your inbox — if an account exists for {sentTo}, we&apos;ve sent a reset
+                    link. The link expires in 1 hour.
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Don&apos;t see it? Check your spam or junk folder. Still nothing after a few
+                  minutes, request a new link.
                 </p>
+                <div className="min-h-10">
+                  <AuthFormError error={forgot.error} />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleResend}
+                  disabled={forgot.isPending || resendCooldown > 0}
+                >
+                  {forgot.isPending
+                    ? 'Loading…'
+                    : resendCooldown > 0
+                      ? `Resend link in ${resendCooldown}s`
+                      : 'Resend link'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={handleDifferentEmail}
+                >
+                  Use a different email
+                </Button>
                 <Link
                   to="/login"
                   className={buttonVariants({ variant: 'outline', className: 'w-full' })}
