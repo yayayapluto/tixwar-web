@@ -14,7 +14,8 @@ import { Toggle } from '@/components/ui/toggle'
 import { requireCustomer } from '@/features/auth/route-guard'
 import type { EventDetail } from '@/features/events/queries'
 import { type Ticket, useTickets } from '@/features/tickets/queries'
-import { getV1EventsById } from '@/lib/client'
+import { getV1EventsById, getV1TicketsById } from '@/lib/client'
+import { queryClient } from '@/lib/queryClient'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { cn, formatDate, formatRelativeDay } from '@/lib/utils'
 
@@ -56,12 +57,37 @@ function TicketCard({
   const title = total > 1 ? `Ticket ${index + 1} of ${total}` : (tier?.name ?? 'Ticket')
   const relativeDay = event ? formatRelativeDay(event.startsAt) : undefined
 
+  // Hover preload: the detail page reads ['ticket', id] (useTicket) plus
+  // the event name/tier from ['event', eventId] (useEvent). Same keys and
+  // options, so the detail renders from cache on open.
+  const prefetchDetail = () => {
+    void queryClient.prefetchQuery({
+      queryKey: ['ticket', ticket.id],
+      queryFn: async () =>
+        (await getV1TicketsById({ path: { id: ticket.id }, throwOnError: true })).data,
+    })
+    void queryClient.prefetchQuery({
+      queryKey: ['event', ticket.eventId],
+      queryFn: async () =>
+        (
+          await getV1EventsById({
+            path: { id: ticket.eventId },
+            query: { include: 'tiers' },
+            throwOnError: true,
+          })
+        ).data,
+    })
+  }
+
   return (
     <li>
       <Card className="transition-[transform,border-color] duration-150 ease-out hover:border-ring active:scale-[0.98]">
         <Link
           to="/tickets/$ticketId"
           params={{ ticketId: ticket.id }}
+          preload="intent"
+          onMouseEnter={prefetchDetail}
+          onFocus={prefetchDetail}
           aria-label={label}
           className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >

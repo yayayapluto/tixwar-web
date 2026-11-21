@@ -17,8 +17,10 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Toggle } from '@/components/ui/toggle'
+import { useSession } from '@/features/auth/use-auth'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
-import { getV1Events } from '@/lib/client'
+import { getV1Events, getV1EventsById, getV1EventsByIdStats } from '@/lib/client'
+import { queryClient } from '@/lib/queryClient'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
@@ -86,6 +88,31 @@ function titleCase(value: string) {
 }
 
 function EventCard({ event }: { event: EventListItem }) {
+  const session = useSession()
+  // Hover preload: the detail page reads ['event', id] with tiers included
+  // (useEvent(id, true, true)) and, for admins, ['event', id, 'stats'].
+  // Same keys and options, so the detail renders from cache on open.
+  const prefetchDetail = () => {
+    void queryClient.prefetchQuery({
+      queryKey: ['event', event.id],
+      queryFn: async () =>
+        (
+          await getV1EventsById({
+            path: { id: event.id },
+            query: { include: 'tiers' },
+            throwOnError: true,
+          })
+        ).data,
+    })
+    // The stats line only renders for admins, so only they pay for the call.
+    if (session?.user.role === 'admin') {
+      void queryClient.prefetchQuery({
+        queryKey: ['event', event.id, 'stats'],
+        queryFn: async () =>
+          (await getV1EventsByIdStats({ path: { id: event.id }, throwOnError: true })).data,
+      })
+    }
+  }
   // Same deadline-based countdown as the ticket detail page: the interval
   // recomputes from saleEndsAt every second, so it never drifts when the
   // tab is backgrounded.
@@ -121,6 +148,9 @@ function EventCard({ event }: { event: EventListItem }) {
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
+      preload="intent"
+      onMouseEnter={prefetchDetail}
+      onFocus={prefetchDetail}
       className="animate-fade-up block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <Card className="border-0 transition-transform duration-150 ease-out active:scale-[0.98]">

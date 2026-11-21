@@ -16,6 +16,7 @@ import {
 import { requireCustomer } from '@/features/auth/route-guard'
 import { useEvent } from '@/features/events/queries'
 import { type Order, type OrderStatus, useOrders } from '@/features/orders/queries'
+import { getV1EventsById, getV1OrdersById } from '@/lib/client'
 import { ORDER_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
 import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -58,6 +59,41 @@ function OrderCard({ order }: { order: Order }) {
 
   const payAction = order.status === 'PENDING_PAYMENT' || order.status === 'PAYMENT_FAILED'
 
+  // Hover preload: the detail page reads ['order', id] (useOrder) plus the
+  // event name/tier from ['event', eventId] (useEvent). Same keys and
+  // options, so the detail renders from cache on open.
+  const prefetchDetail = () => {
+    void queryClient.prefetchQuery({
+      queryKey: ['order', order.id],
+      queryFn: async () =>
+        (await getV1OrdersById({ path: { id: order.id }, throwOnError: true })).data,
+    })
+    void queryClient.prefetchQuery({
+      queryKey: ['event', order.eventId],
+      queryFn: async () =>
+        (
+          await getV1EventsById({
+            path: { id: order.eventId },
+            query: { include: 'tiers' },
+            throwOnError: true,
+          })
+        ).data,
+    })
+  }
+  const prefetchEvent = () => {
+    void queryClient.prefetchQuery({
+      queryKey: ['event', order.eventId],
+      queryFn: async () =>
+        (
+          await getV1EventsById({
+            path: { id: order.eventId },
+            query: { include: 'tiers' },
+            throwOnError: true,
+          })
+        ).data,
+    })
+  }
+
   return (
     <Card className="transition-[border-color] duration-150 ease-out hover:border-ring">
       <CardHeader>
@@ -66,6 +102,9 @@ function OrderCard({ order }: { order: Order }) {
             <Link
               to="/orders/$orderId"
               params={{ orderId: order.id }}
+              preload="intent"
+              onMouseEnter={prefetchDetail}
+              onFocus={prefetchDetail}
               className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {event?.name ?? `Order #${order.id.slice(-8)}`}
@@ -133,6 +172,9 @@ function OrderCard({ order }: { order: Order }) {
           <Link
             to="/orders/$orderId"
             params={{ orderId: order.id }}
+            preload="intent"
+            onMouseEnter={prefetchDetail}
+            onFocus={prefetchDetail}
             className={buttonVariants({ className: 'w-full' })}
           >
             {order.status === 'PAYMENT_FAILED'
@@ -143,6 +185,9 @@ function OrderCard({ order }: { order: Order }) {
           <Link
             to="/events/$eventId"
             params={{ eventId: order.eventId }}
+            preload="intent"
+            onMouseEnter={prefetchEvent}
+            onFocus={prefetchEvent}
             className={buttonVariants({ variant: 'outline', className: 'w-full' })}
           >
             Buy again

@@ -28,6 +28,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useLogout, useSession } from '@/features/auth/use-auth'
 import { ThemeProvider, useTheme } from '@/features/theme/theme-context'
+import { getV1ApiKeys, getV1Events, getV1Orders, getV1Tickets } from '@/lib/client'
 import { queryClient } from '@/lib/queryClient'
 import { cn } from '@/lib/utils'
 
@@ -40,6 +41,77 @@ type NavItem = {
   label: string
   icon: LucideIcon
   show: boolean
+}
+
+// Hover preload: fetch a nav destination's list data into the shared query
+// cache so opening the page renders from cache instead of loading. Only
+// the hovered destination is fetched, never on render; a fresh cache entry
+// (staleTime 30s) is reused, so repeated hovers cost no extra request.
+// The JS chunk itself is preloaded by each Link's preload="intent".
+function prefetchEventsList() {
+  // Same default filters the /events route validates to when navigated
+  // without search params, and the same category query the page runs.
+  const filters = {
+    q: '',
+    status: undefined,
+    category: undefined,
+    sort: 'ending' as const,
+    page: 1,
+    limit: 12,
+  }
+  void queryClient.prefetchQuery({
+    queryKey: ['events', filters],
+    queryFn: async () => (await getV1Events({ query: filters, throwOnError: true })).data,
+  })
+  void queryClient.prefetchQuery({
+    queryKey: ['events', { q: '', status: undefined, limit: 100 }],
+    queryFn: async () =>
+      (await getV1Events({ query: { q: '', limit: 100 }, throwOnError: true })).data,
+  })
+}
+
+function prefetchOrdersList() {
+  void queryClient.prefetchQuery({
+    queryKey: ['orders', 'all'],
+    queryFn: async () => (await getV1Orders({ query: {}, throwOnError: true })).data,
+  })
+}
+
+function prefetchTicketsList() {
+  void queryClient.prefetchQuery({
+    queryKey: ['tickets'],
+    queryFn: async () => (await getV1Tickets({ throwOnError: true })).data,
+  })
+}
+
+function prefetchApiKeys() {
+  // Both /settings (regular users, via ApiKeysManager) and /api-keys
+  // render the same ['api-keys'] query.
+  void queryClient.prefetchQuery({
+    queryKey: ['api-keys'],
+    queryFn: async () => (await getV1ApiKeys({ throwOnError: true })).data,
+  })
+}
+
+function prefetchNav(to: NavItem['to']) {
+  switch (to) {
+    case '/events':
+      prefetchEventsList()
+      break
+    case '/orders':
+      prefetchOrdersList()
+      break
+    case '/tickets':
+      prefetchTicketsList()
+      break
+    case '/settings':
+    case '/api-keys':
+      prefetchApiKeys()
+      break
+    case '/debug/stream':
+      // Live SSE stream: nothing cacheable to prefetch, chunk only.
+      break
+  }
 }
 
 function useVisibleNavItems(): Array<NavItem> {
@@ -102,6 +174,9 @@ function BottomBar() {
           <Link
             key={item.to}
             to={item.to}
+            preload="intent"
+            onMouseEnter={() => prefetchNav(item.to)}
+            onFocus={() => prefetchNav(item.to)}
             ref={(el) => {
               if (el) itemRefs.current.set(item.to, el)
               else itemRefs.current.delete(item.to)
@@ -134,7 +209,13 @@ function Header() {
   return (
     <header className="sticky top-0 z-10 border-b bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
-        <Link to="/events" className="flex items-center gap-2 font-semibold">
+        <Link
+          to="/events"
+          preload="intent"
+          onMouseEnter={prefetchEventsList}
+          onFocus={prefetchEventsList}
+          className="flex items-center gap-2 font-semibold"
+        >
           <Ticket className="size-5" aria-hidden="true" />
           TixWar
         </Link>
