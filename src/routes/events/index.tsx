@@ -1,7 +1,7 @@
 import { useQueries } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Search, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { EventsGridSkeleton, EventsPageSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +23,8 @@ import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 const PAGE_SIZE = 12
+// Realtime search waits for the user to stop typing before applying.
+const DEBOUNCE_MS = 300
 // Category chips past the working-memory limit are hidden behind "More".
 const VISIBLE_CHIP_COUNT = 4
 // The API has no server-side sort, so sorting is client-side over the pages
@@ -185,11 +187,13 @@ function EventCard({ event }: { event: EventListItem }) {
 function EventsPage() {
   const search = Route.useSearch()
   const navigate = useNavigate()
-  // The search input is a draft; only submit writes it to the URL (and the
-  // query). It is re-seeded whenever the route remounts with a ?q= in the URL.
+  // The search input is realtime with a debounce: typing only updates the
+  // input, the query is applied 300ms after the last keystroke. The input
+  // is re-seeded whenever ?q= changes (apply, clear, back/forward).
   const [q, setQ] = useState(search.q)
   const [showAllCategories, setShowAllCategories] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const searchTimerRef = useRef<number | undefined>(undefined)
 
   const appliedQ = search.q ?? ''
   const status = search.status ?? ''
@@ -197,21 +201,29 @@ function EventsPage() {
   const page = search.page ?? 1
   const sort = search.sort ?? 'ending'
 
-  // Status, category and sort are staged like the search draft: changing a
-  // control only updates the local draft (the control visibly responds),
-  // nothing refetches until the form is submitted. The drafts re-sync
-  // whenever the applied URL values change (apply, clear, back/forward),
-  // so the controls always mirror what the list is actually showing.
-  const [draftStatus, setDraftStatus] = useState(status)
-  const [draftCategory, setDraftCategory] = useState(category)
-  const [draftSort, setDraftSort] = useState<SortKey>(sort)
-
   useEffect(() => {
     setQ(search.q)
-    setDraftStatus(status)
-    setDraftCategory(category)
-    setDraftSort(sort)
-  }, [search.q, status, category, sort])
+  }, [search.q])
+
+  // Cancel a pending debounced search (submit, clear, new keystroke,
+  // unmount). Without this a stale timer could re-apply an old query
+  // after the user already moved on.
+  const cancelPendingSearch = useCallback(() => {
+    window.clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = undefined
+  }, [])
+
+  // Debounced apply: while the user keeps typing the timer is reset on
+  // every keystroke (effect cleanup); it only fires once typing stops.
+  // The timer holds the latest input value, so the applied query is
+  // never older than what the user last typed.
+  useEffect(() => {
+    if (q === appliedQ) return
+    searchTimerRef.current = window.setTimeout(() => {
+      navigate({ to: '/events', search: (prev) => ({ ...prev, q, page: 1 }), replace: true })
+    }, DEBOUNCE_MS)
+    return () => cancelPendingSearch()
+  }, [q, appliedQ, navigate, cancelPendingSearch])
 
   // Filter/search/sort/page changes replace the current history entry so
   // scrolling through pages does not spam the back stack; the URL still
@@ -283,11 +295,9 @@ function EventsPage() {
     : knownCategories.slice(0, VISIBLE_CHIP_COUNT)
   const shownCategories = [
     ...visibleCategories,
-    // The applied and the staged category are always kept visible, so a
-    // chip clicked before apply never vanishes from the row.
-    ...[...new Set([category, draftCategory])].filter(
-      (c) => c !== '' && !visibleCategories.includes(c),
-    ),
+    // The applied category is always kept visible, so a clicked chip
+    // never vanishes from the row.
+    ...(category !== '' && !visibleCategories.includes(category) ? [category] : []),
   ]
 
   useEffect(() => {
@@ -311,24 +321,22 @@ function EventsPage() {
 
   const filtered = appliedQ !== '' || status !== '' || category !== ''
   const clearFilters = () => {
+    cancelPendingSearch()
     setQ('')
-    setDraftStatus('')
-    setDraftCategory('')
     updateSearch({ q: '', status: '', category: '', page: 1 })
   }
-  // Category chips only stage a value; the list does not change until apply.
+  // Category chips apply immediately; the list refetches on every click.
   const toggleCategory = (value: string) => {
-    setDraftCategory(draftCategory === value ? '' : value)
+    updateSearch({ category: category === value ? '' : value, page: 1 })
   }
-  // Clearing the search input only clears the draft, unless the draft is
-  // the query currently applied — then the active query is cleared too
-  // (one refetch without q).
+  // Clearing the search input cancels the pending debounce and, if the
+  // input is the query currently applied, clears the active query too
+  // (one refetch without q). Otherwise it only clears the input.
   const clearSearch = () => {
-    if (q === appliedQ && appliedQ !== '') {
-      setQ('')
+    cancelPendingSearch()
+    setQ('')
+    if (appliedQ !== '') {
       updateSearch({ q: '', page: 1 })
-    } else {
-      setQ('')
     }
   }
   const refetchAll = () => {
@@ -352,21 +360,16 @@ function EventsPage() {
           </p>
         )}
       </div>
-      {/* Search, filter and sort are staged, not live: changing a control
-          only updates the local draft. Submit applies everything at once
-          (server-side, one request per apply); the existing Search submit
-          is kept as the apply trigger. Clear filters still applies at once. */}
+      {/* Realtime: status, category and sort apply the moment they change.
+          Search is realtime too, debounced 300ms. Submit applies the
+          current input at once (cancelling a pending debounce); Clear
+          filters applies at once as well. */}
       <form
         className="flex flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
           e.preventDefault()
-          updateSearch({
-            q,
-            status: draftStatus,
-            category: draftCategory,
-            sort: draftSort,
-            page: 1,
-          })
+          cancelPendingSearch()
+          updateSearch({ q, page: 1 })
         }}
       >
         <div className="relative flex-1">
@@ -395,9 +398,9 @@ function EventsPage() {
           )}
         </div>
         <Select
-          value={draftStatus === '' ? 'all' : draftStatus}
+          value={status === '' ? 'all' : status}
           onValueChange={(v) => {
-            setDraftStatus(v === 'all' ? '' : v)
+            updateSearch({ status: v === 'all' ? '' : v, page: 1 })
           }}
         >
           <SelectTrigger aria-label="Filter by status" className="sm:w-44">
@@ -412,9 +415,9 @@ function EventsPage() {
           </SelectContent>
         </Select>
         <Select
-          value={draftSort}
+          value={sort}
           onValueChange={(v) => {
-            setDraftSort(v as SortKey)
+            updateSearch({ sort: v as SortKey, page: 1 })
           }}
         >
           <SelectTrigger aria-label="Sort events" className="sm:w-48">
@@ -442,7 +445,7 @@ function EventsPage() {
           <Toggle
             size="sm"
             variant="outline"
-            pressed={draftCategory === ''}
+            pressed={category === ''}
             onPressedChange={() => toggleCategory('')}
             aria-label="Show all categories"
             className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
@@ -454,7 +457,7 @@ function EventsPage() {
               key={c}
               size="sm"
               variant="outline"
-              pressed={draftCategory === c}
+              pressed={category === c}
               onPressedChange={() => toggleCategory(c)}
               aria-label={`Filter by ${titleCase(c)}`}
               className="rounded-full data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 data-[state=on]:hover:text-primary-foreground"
