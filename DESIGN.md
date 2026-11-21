@@ -5,12 +5,12 @@ payment countdown. The UI should make that race legible, not decorate it.
 
 ## Identity
 
-- **Palette:** shadcn preset `b3kJnBDtY` (Style Nova, Base Color Mist,
-  Theme Green, Chart Orange, Radius 0.625rem). Neutrals are mist-tinted
-  (`--background`, `--card`, `--muted`); `--primary` is green (light
-  `oklch(0.527 0.154 150.069)`, dark `oklch(0.448 0.119 151.328)`); chart
-  tokens (`--chart-1`–`--chart-5`) are orange. No gradients, no glow, no
-  background grids.
+- **Palette:** shadcn preset `b3m8J96dE` (Style Sera, Base Color Mist,
+  Theme Green, Chart Orange, Radius 0 — Sera forces square corners).
+  Neutrals are mist-tinted (`--background`, `--card`, `--muted`); `--primary`
+  is green (light `oklch(0.69 0.1526 148.49)`, dark
+  `oklch(0.78 0.1537 151.76)`); chart tokens (`--chart-1`–`--chart-5`) are
+  orange. No gradients, no glow, no background grids.
 - **One urgency token:** `destructive` (red) is reserved for live-sale
   urgency — low stock, a sale ending in under an hour, an order expiring
   in under a minute. It stays distinct from the green primary and is never
