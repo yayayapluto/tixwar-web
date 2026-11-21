@@ -58,6 +58,7 @@ function TicketDetailPage() {
   const eventQuery = useEvent(query.data?.data.ticket.eventId ?? '')
   const [failedQrUrl, setFailedQrUrl] = useState<string | null>(null)
   const [refetchError, setRefetchError] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   // QR mana yang sudah di-auto-refresh: satu URL hanya di-refresh otomatis sekali,
   // supaya refetch yang gagal tidak memicu loop.
   const autoRefreshedFor = useRef<string | null>(null)
@@ -130,11 +131,17 @@ function TicketDetailPage() {
         : 'QR hampir kedaluwarsa, kurang dari satu menit lagi'
 
   async function handleDownload() {
+    // Guard ganda: tombol disabled saat mengunduh, tapi ketukan yang lolos
+    // sebelum React me-render ulang tetap ditolak di sini.
+    if (isDownloading) return
+    setIsDownloading(true)
     try {
       await downloadQr(detail.qrUrl, `tixwar-${ticket.code}.png`)
       toast('QR berhasil diunduh', { variant: 'success' })
     } catch {
       toast('Gagal mengunduh QR. Coba lagi.')
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -297,9 +304,12 @@ function TicketDetailPage() {
               <p className="text-center text-sm text-muted-foreground">
                 Kalau QR tidak terbaca, tunjukkan kode tiket di atas ke petugas.
               </p>
-              <Button className="w-full" onClick={handleDownload}>
-                <Download className="size-4" aria-hidden="true" />
-                Download QR
+              <Button className="w-full" onClick={handleDownload} disabled={isDownloading}>
+                <Download
+                  className={cn('size-4', isDownloading && 'animate-spin')}
+                  aria-hidden="true"
+                />
+                {isDownloading ? 'Mengunduh…' : 'Download QR'}
               </Button>
             </>
           )}
