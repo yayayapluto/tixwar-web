@@ -28,17 +28,17 @@ function EventCardSkeleton() {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <Skeleton className="h-4 min-w-0 flex-1" />
-          <Skeleton className="h-5 w-16 shrink-0" />
+          <Skeleton className="h-[22px] w-16 shrink-0" />
         </div>
       </CardHeader>
       <CardContent className="space-y-1">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-2/5" />
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-5 w-2/5" />
         <div className="space-y-1 border-t pt-2">
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="h-5 w-1/3" />
         </div>
       </CardContent>
     </Card>
@@ -69,7 +69,7 @@ export function EventsPageSkeleton() {
     <SkeletonShell>
       <div className="space-y-1">
         <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-5 w-32" />
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Skeleton className="h-11 flex-1" />
@@ -83,8 +83,9 @@ export function EventsPageSkeleton() {
         <Skeleton className="h-10 w-20 rounded-full" />
         <Skeleton className="h-10 w-24 rounded-full" />
         <Skeleton className="h-10 w-16 rounded-full" />
+        <Skeleton className="h-10 w-20 rounded-full" />
       </div>
-      <EventsGrid count={6} />
+      <EventsGrid count={12} />
     </SkeletonShell>
   )
 }
@@ -99,12 +100,12 @@ function TierCardSkeleton() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-5 w-2/3" />
         <div className="flex gap-2">
           <Skeleton className="h-11 w-24" />
           <Skeleton className="h-11 flex-1" />
         </div>
+        <Skeleton className="h-5 w-full" />
       </CardContent>
     </Card>
   )
@@ -113,19 +114,19 @@ function TierCardSkeleton() {
 export function EventDetailSkeleton() {
   return (
     <SkeletonShell>
-      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-5 w-28" />
       <div className="space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <Skeleton className="h-8 min-w-0 flex-1" />
-          <Skeleton className="h-5 w-20 shrink-0" />
+          <Skeleton className="h-[22px] w-20 shrink-0" />
         </div>
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-4/5" />
-        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-5 w-4/5" />
+        <Skeleton className="h-5 w-40" />
       </div>
-      <Skeleton className="h-6 w-24" />
+      <Skeleton className="h-7 w-24" />
       <div className="grid gap-3 sm:grid-cols-2">
         <TierCardSkeleton />
         <TierCardSkeleton />
@@ -145,11 +146,11 @@ function OrderCardSkeleton() {
         </div>
       </CardHeader>
       <CardContent className="space-y-1">
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-5 w-40" />
       </CardContent>
       <CardFooter>
         <Skeleton className="h-11 w-full" />
@@ -192,7 +193,7 @@ export function OrdersPageSkeleton() {
 export function OrderDetailSkeleton() {
   return (
     <SkeletonShell>
-      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-5 w-28" />
       <div className="flex items-start justify-between gap-2">
         <Skeleton className="h-8 min-w-0 flex-1" />
         <Skeleton className="h-5 w-24 shrink-0" />
@@ -205,13 +206,15 @@ export function OrderDetailSkeleton() {
           <div className="space-y-1">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-5 w-64" />
           </div>
           <div className="space-y-1">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
           </div>
           <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-5 w-72" />
         </CardContent>
       </Card>
       <div className="space-y-2">
@@ -230,9 +233,9 @@ function TicketCardSkeleton() {
       </CardHeader>
       <CardContent className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-4 w-3/4" />
         </div>
         <Skeleton className="h-10 w-24 shrink-0" />
       </CardContent>
@@ -244,7 +247,7 @@ function TicketsList({ count }: { count: number }) {
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-6 w-24" />
         <div className="grid gap-3">
           {Array.from({ length: count }, (_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static rows, never reordered
@@ -276,27 +279,29 @@ export function TicketsPageSkeleton() {
 export function TicketDetailSkeleton() {
   return (
     <SkeletonShell>
-      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-5 w-28" />
       <Skeleton className="h-8 w-2/3" />
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3.5 w-32" />
           <span className="flex shrink-0 items-center gap-1">
             <Skeleton className="h-5 w-16" />
             <Skeleton className="h-11 w-11" />
           </span>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-1">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+          <div className="min-h-11 space-y-1">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-5 w-1/2" />
           </div>
-          <Skeleton className="mx-auto aspect-square w-full max-w-56" />
-          <div className="space-y-1 text-center">
+          <div className="rounded-lg border bg-white p-4">
+            <Skeleton className="mx-auto aspect-square w-full max-w-56" />
+          </div>
+          <div className="rounded-lg border border-transparent p-3">
             <Skeleton className="mx-auto h-9 w-40" />
-            <Skeleton className="mx-auto h-4 w-48" />
+            <Skeleton className="mx-auto h-10 w-48" />
           </div>
-          <Skeleton className="mx-auto h-4 w-56" />
+          <Skeleton className="mx-auto h-5 w-56" />
           <Skeleton className="h-11 w-full" />
         </CardContent>
       </Card>
@@ -308,13 +313,14 @@ function ApiKeyRowSkeleton() {
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
       <div className="min-w-0 space-y-0.5">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-20" />
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Skeleton className="h-5 w-16" />
-        <Skeleton className="h-10 w-20" />
+      <div className="flex w-44 shrink-0 items-center justify-between gap-2">
+        <Skeleton className="h-5 w-[4.75rem] shrink-0" />
+        <Skeleton className="h-10 w-[5.5rem] shrink-0" />
       </div>
     </div>
   )
@@ -344,19 +350,25 @@ export function ApiKeysManagerSkeleton() {
     <div className="space-y-4">
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-10 w-32 shrink-0" />
+          <Skeleton className="h-4 w-44" />
+          <Skeleton className="h-10 w-36 shrink-0" />
         </CardHeader>
         <CardContent className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-11 min-w-0 flex-1" />
-            <Skeleton className="h-11 w-11 shrink-0" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-16" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 min-w-0 flex-1" />
+              <Skeleton className="h-11 w-11 shrink-0" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-11 min-w-0 flex-1" />
-            <Skeleton className="h-11 w-11 shrink-0" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-16" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 min-w-0 flex-1" />
+              <Skeleton className="h-11 w-11 shrink-0" />
+            </div>
           </div>
           <Skeleton className="h-4 w-2/3" />
         </CardContent>
@@ -368,7 +380,8 @@ export function ApiKeysManagerSkeleton() {
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Skeleton className="h-11 min-w-0 flex-1" />
-            <Skeleton className="h-11 w-20" />
+            <Skeleton className="h-11 w-44 shrink-0" />
+            <Skeleton className="h-11 w-28 shrink-0" />
           </div>
         </CardContent>
       </Card>
@@ -388,24 +401,30 @@ export function ApiKeysPageSkeleton() {
 
 export function SettingsPageSkeleton() {
   return (
-    <SkeletonShell>
+    <div role="status" aria-busy="true" className="space-y-6">
+      <span className="sr-only">Loading…</span>
       <Skeleton className="h-8 w-32" />
-      <Card>
-        <CardContent className="space-y-2 pt-6">
-          <div className="flex items-center justify-between gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-40" />
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-        </CardContent>
-      </Card>
-      <Skeleton className="h-6 w-28" />
-      <Skeleton className="h-4 w-2/3" />
-      <ApiKeysManagerSkeleton />
-    </SkeletonShell>
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-20" />
+        <Card>
+          <CardContent className="space-y-2 pt-6">
+            <div className="flex items-center justify-between gap-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-5 w-40" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-5 w-[5.5rem]" />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-24" />
+        <Skeleton className="h-4 w-2/3" />
+        <ApiKeysManagerSkeleton />
+      </section>
+    </div>
   )
 }
 
@@ -425,6 +444,8 @@ function TraceRowSkeleton() {
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-5/6" />
         <Skeleton className="h-3 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-3 w-1/3" />
       </div>
     </article>
   )
@@ -459,24 +480,27 @@ export function DebugPageSkeleton() {
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
+      <Skeleton className="h-[114px] w-full sm:h-[66px]" />
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-5 w-16" />
-            <Skeleton className="h-5 w-8" />
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-12" />
             <div className="ml-auto flex items-center gap-2">
               <Skeleton className="h-10 w-16" />
               <Skeleton className="h-10 w-28" />
             </div>
           </div>
           <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Skeleton className="h-11 min-w-40 flex-1" />
             <Skeleton className="h-11 w-44" />
           </div>
+          <Skeleton className="h-[114px] w-full sm:h-[66px]" />
           <TraceListSkeleton count={3} />
         </CardContent>
       </Card>
@@ -489,7 +513,9 @@ export function DebugPageSkeleton() {
             <FormFieldSkeleton />
             <FormFieldSkeleton />
             <FormFieldSkeleton />
+            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-8 w-full" />
           </CardContent>
         </Card>
         <Card>
@@ -500,6 +526,8 @@ export function DebugPageSkeleton() {
             <FormFieldSkeleton />
             <FormFieldSkeleton />
             <FormFieldSkeleton />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-11 w-full" />
           </CardContent>
         </Card>
@@ -529,15 +557,22 @@ export function AuthPageSkeleton({ variant }: { variant: AuthSkeletonVariant }) 
                 <FormFieldSkeleton hint={variant === 'register' || variant === 'reset'} />
               )}
               {variant === 'login' && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4" />
-                    <Skeleton className="h-4 w-24" />
+                <>
+                  <Skeleton className="h-3 w-20 ml-auto" />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
                   </div>
-                  <Skeleton className="h-3 w-full" />
-                </div>
+                </>
               )}
+              <Skeleton className="h-10 w-full" />
               <Skeleton className="h-11 w-full" />
+              {variant === 'register' && <Skeleton className="h-9 w-40 mx-auto" />}
+              {variant === 'forgot' && <Skeleton className="h-4 w-32 mx-auto" />}
             </div>
           </CardContent>
         </Card>
