@@ -88,7 +88,7 @@ function titleCase(value: string) {
     .join(' ')
 }
 
-function EventCard({ event }: { event: EventListItem }) {
+function EventCard({ event, tourTarget }: { event: EventListItem; tourTarget?: boolean }) {
   const session = useSession()
   // Hover preload: the detail page reads ['event', id] with tiers included
   // (useEvent(id, true, true)) and, for admins, ['event', id, 'stats'].
@@ -149,6 +149,7 @@ function EventCard({ event }: { event: EventListItem }) {
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
+      id={tourTarget ? 'tour-event-card' : undefined}
       preload="intent"
       onMouseEnter={prefetchDetail}
       onFocus={prefetchDetail}
@@ -474,6 +475,7 @@ function EventsPage() {
             aria-hidden="true"
           />
           <Input
+            id="tour-search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by event name"
@@ -493,40 +495,44 @@ function EventsPage() {
             </Button>
           )}
         </div>
-        <Select
-          value={status === '' ? 'all' : status}
-          onValueChange={(v) => {
-            updateSearch({ status: v === 'all' ? '' : v, page: 1 })
-          }}
-        >
-          <SelectTrigger aria-label="Filter by status" className="sm:w-44">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="ON_SALE">On sale</SelectItem>
-            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-            <SelectItem value="SOLD_OUT">Sold out</SelectItem>
-            <SelectItem value="ENDED">Ended</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={sort}
-          onValueChange={(v) => {
-            updateSearch({ sort: v as SortKey, page: 1 })
-          }}
-        >
-          <SelectTrigger aria-label="Sort events" className="sm:w-48">
-            <SelectValue placeholder="Sort" />
-          </SelectTrigger>
-          <SelectContent>
-            {(SORT_KEYS as readonly SortKey[]).map((key) => (
-              <SelectItem key={key} value={key}>
-                {SORT_LABELS[key]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* The two filter selects share one tour target: on mobile they
+            stack full-width, on desktop they sit side by side. */}
+        <div id="tour-filters" className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Select
+            value={status === '' ? 'all' : status}
+            onValueChange={(v) => {
+              updateSearch({ status: v === 'all' ? '' : v, page: 1 })
+            }}
+          >
+            <SelectTrigger aria-label="Filter by status" className="sm:w-44">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="ON_SALE">On sale</SelectItem>
+              <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+              <SelectItem value="SOLD_OUT">Sold out</SelectItem>
+              <SelectItem value="ENDED">Ended</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={sort}
+            onValueChange={(v) => {
+              updateSearch({ sort: v as SortKey, page: 1 })
+            }}
+          >
+            <SelectTrigger aria-label="Sort events" className="sm:w-48">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              {(SORT_KEYS as readonly SortKey[]).map((key) => (
+                <SelectItem key={key} value={key}>
+                  {SORT_LABELS[key]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button type="submit">Search</Button>
         {/* Always mounted: invisible (not unmounted) while no filter is
             active, so it never pops in and widens the row or wraps it. */}
@@ -547,7 +553,7 @@ function EventsPage() {
           (min-h-10): it never pops in on load and pushes the grid down.
           While categories are still loading, chip-shaped placeholders
           hold the same space. */}
-      <fieldset className="flex min-h-10 flex-wrap gap-2">
+      <fieldset id="tour-categories" className="flex min-h-10 flex-wrap gap-2">
         <legend className="sr-only">Filter by category</legend>
         {showCategoryPlaceholders && (
           <>
@@ -624,8 +630,8 @@ function EventsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
-            {items.map((event) => (
-              <EventCard key={event.id} event={event} />
+            {items.map((event, index) => (
+              <EventCard key={event.id} event={event} tourTarget={index === 0} />
             ))}
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-1" />

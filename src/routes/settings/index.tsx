@@ -17,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ApiKeysManager } from '@/features/api-keys/api-keys-manager'
 import { requireAuth } from '@/features/auth/route-guard'
 import { useLogout, useSession } from '@/features/auth/use-auth'
+import { useTour } from '@/features/onboarding/tour-context'
 
 export const Route = createFileRoute('/settings/')({
   beforeLoad: () => {
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/settings/')({
 function SettingsPage() {
   const session = useSession()
   const logout = useLogout()
+  const tour = useTour()
   const [logoutOpen, setLogoutOpen] = useState(false)
 
   return (
@@ -90,6 +92,16 @@ function SettingsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
+            {/* Admins never reach this page (redirected to /api-keys), but
+                the row is guarded anyway: the tour is for regular users. */}
+            {session?.user.role !== 'admin' && (
+              <div className="flex items-center justify-between gap-2">
+                <p className="shrink-0 text-sm text-muted-foreground">Show Onboarding</p>
+                <Button variant="outline" size="sm" onClick={() => void tour.startTour()}>
+                  Start tour
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>

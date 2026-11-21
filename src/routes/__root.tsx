@@ -29,6 +29,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLogout, useSession } from '@/features/auth/use-auth'
+import { TourProvider } from '@/features/onboarding/tour-context'
 import { ThemeProvider, useTheme } from '@/features/theme/theme-context'
 import { appScrollViewportRef, scrollAppToTop } from '@/lib/app-scroll'
 import { getV1ApiKeys, getV1Events, getV1Orders, getV1Tickets } from '@/lib/client'
@@ -158,7 +159,7 @@ function BottomBar() {
   return (
     <nav
       ref={navRef}
-      id="primary-nav"
+      id="tour-nav"
       tabIndex={-1}
       aria-label="Primary"
       className="animate-bar-in fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
@@ -297,37 +298,42 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <div className="relative flex h-dvh flex-col overflow-hidden">
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-start gap-2 p-4">
-            <a
-              href="#main"
-              className="sr-only focus:not-sr-only focus:pointer-events-auto focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              Skip to main content
-            </a>
-            {showBottomBar && (
+        <TourProvider>
+          <div className="relative flex h-dvh flex-col overflow-hidden">
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-start gap-2 p-4">
               <a
-                href="#primary-nav"
+                href="#main"
                 className="sr-only focus:not-sr-only focus:pointer-events-auto focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                Skip to navigation
+                Skip to main content
               </a>
-            )}
+              {showBottomBar && (
+                <a
+                  href="#tour-nav"
+                  className="sr-only focus:not-sr-only focus:pointer-events-auto focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Skip to navigation
+                </a>
+              )}
+            </div>
+            <Header />
+            <ScrollArea viewportRef={appScrollViewportRef} className="min-h-0 flex-1">
+              <main
+                id="main"
+                tabIndex={-1}
+                className={cn(
+                  'mx-auto w-full max-w-5xl px-4 pt-6',
+                  showBottomBar ? 'pb-24' : 'pb-6',
+                )}
+              >
+                <Outlet />
+              </main>
+            </ScrollArea>
+            <BottomBar />
+            <Toaster />
+            <SmoothCursor />
           </div>
-          <Header />
-          <ScrollArea viewportRef={appScrollViewportRef} className="min-h-0 flex-1">
-            <main
-              id="main"
-              tabIndex={-1}
-              className={cn('mx-auto w-full max-w-5xl px-4 pt-6', showBottomBar ? 'pb-24' : 'pb-6')}
-            >
-              <Outlet />
-            </main>
-          </ScrollArea>
-          <BottomBar />
-          <Toaster />
-          <SmoothCursor />
-        </div>
+        </TourProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )
