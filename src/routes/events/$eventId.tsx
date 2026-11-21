@@ -97,7 +97,7 @@ function TierCard({
   const lowStock = remaining !== null && remaining > 0 && remaining <= 10
 
   return (
-    <Card className={cn(cheapest && 'border-primary')}>
+    <Card className={cn('flex h-full flex-col', cheapest && 'border-primary')}>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="min-w-0 flex-1 truncate">{tier.name}</CardTitle>
@@ -107,17 +107,17 @@ function TierCard({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-1 flex-col space-y-3">
         {remaining === null ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="min-h-5 text-sm tabular-nums text-muted-foreground">
             Total quota {tier.quota} · max {tier.maxPerUser} per user
           </p>
         ) : soldOut ? (
-          <p className="text-sm font-medium text-destructive">Sold out</p>
+          <p className="min-h-5 text-sm font-medium tabular-nums text-destructive">Sold out</p>
         ) : (
           <p
             className={cn(
-              'text-sm',
+              'min-h-5 text-sm tabular-nums',
               lowStock ? 'font-medium text-destructive' : 'text-muted-foreground',
             )}
           >
@@ -136,21 +136,32 @@ function TierCard({
         )}
         {showSaleWindow &&
           (saleOpen && saleSecondsLeft !== null ? (
-            <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
-              Sale ends in {formatCountdown(saleSecondsLeft)}
+            <p
+              className={cn(
+                'flex min-h-5 items-center text-sm font-medium tabular-nums',
+                saleSecondsLeft < 3600 && 'text-destructive',
+              )}
+            >
+              Sale ends in&nbsp;
+              <span className="inline-block min-w-[8ch] tabular-nums">
+                {formatCountdown(saleSecondsLeft)}
+              </span>
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="flex min-h-5 items-center text-xs text-muted-foreground">
               Sale: {formatDate(tier.saleStartsAt)} – {formatDate(tier.saleEndsAt)}
             </p>
           ))}
         {!session ? (
           soldOut ? (
-            <Button className="w-full" disabled>
+            <Button className="mt-auto w-full" disabled>
               Sold out
             </Button>
           ) : (
-            <Link to="/login" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
+            <Link
+              to="/login"
+              className={cn(buttonVariants({ variant: 'outline' }), 'mt-auto w-full')}
+            >
               Log in to buy
             </Link>
           )
@@ -162,7 +173,7 @@ function TierCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full"
+              className="mt-auto w-full"
               onClick={() => onLoadTest?.(tier.id)}
             >
               <Activity className="size-4" aria-hidden="true" />
@@ -170,7 +181,7 @@ function TierCard({
             </Button>
           </>
         ) : (
-          <div className="space-y-2">
+          <div className="mt-auto space-y-2">
             <div className="flex gap-2">
               <span id={quantityLabelId} className="sr-only">
                 Quantity
@@ -183,7 +194,7 @@ function TierCard({
                   setOrderError(null)
                 }}
               >
-                <SelectTrigger aria-labelledby={quantityLabelId} className="w-24">
+                <SelectTrigger aria-labelledby={quantityLabelId} className="w-24 shrink-0">
                   <SelectValue placeholder="Qty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -197,7 +208,7 @@ function TierCard({
                 </SelectContent>
               </Select>
               <Button
-                className="flex-1"
+                className="min-w-0 flex-1"
                 disabled={!saleOpen || soldOut || createOrder.isPending}
                 onClick={() => {
                   setOrderError(null)
@@ -211,20 +222,20 @@ function TierCard({
                   )
                 }}
               >
-                {createOrder.isPending
-                  ? 'Reserving…'
-                  : soldOut
-                    ? 'Sold out'
-                    : saleOpen
-                      ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
-                      : 'Not on sale'}
+                <span className="truncate">
+                  {createOrder.isPending
+                    ? 'Reserving…'
+                    : soldOut
+                      ? 'Sold out'
+                      : saleOpen
+                        ? `Buy ${quantity} × ${formatCurrency(tier.price)}`
+                        : 'Not on sale'}
+                </span>
               </Button>
             </div>
-            {orderError && (
-              <p role="alert" className="text-sm text-destructive">
-                {orderError}
-              </p>
-            )}
+            <p role={orderError ? 'alert' : undefined} className="min-h-5 text-sm text-destructive">
+              {orderError ?? ''}
+            </p>
           </div>
         )}
       </CardContent>
@@ -281,7 +292,7 @@ function EventDetailPage() {
       </Link>
       <div className="space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h1 className="text-2xl font-semibold">{detail.name}</h1>
+          <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words">{detail.name}</h1>
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setLoadDrawer({ open: true })}>
@@ -301,11 +312,19 @@ function EventDetailPage() {
         {detail.description && <p className="text-sm">{detail.description}</p>}
         {saleWindow &&
           (saleOpen && saleSecondsLeft !== null ? (
-            <p className={cn('text-sm font-medium', saleSecondsLeft < 3600 && 'text-destructive')}>
-              Sale ends in {formatCountdown(saleSecondsLeft)}
+            <p
+              className={cn(
+                'flex min-h-5 items-center text-sm font-medium tabular-nums',
+                saleSecondsLeft < 3600 && 'text-destructive',
+              )}
+            >
+              Sale ends in&nbsp;
+              <span className="inline-block min-w-[8ch] tabular-nums">
+                {formatCountdown(saleSecondsLeft)}
+              </span>
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="flex min-h-5 items-center text-xs text-muted-foreground">
               Sale: {formatDate(saleWindow.saleStartsAt)} – {formatDate(saleWindow.saleEndsAt)}
             </p>
           ))}
@@ -320,9 +339,11 @@ function EventDetailPage() {
         )}
       </div>
 
-      {isAdmin && stats.data && (
-        <p className="text-sm text-muted-foreground">
-          {stats.data.data.sold} sold · {formatCurrency(stats.data.data.revenue)} revenue
+      {isAdmin && (
+        <p className="min-h-5 text-sm tabular-nums text-muted-foreground">
+          {stats.data
+            ? `${stats.data.data.sold} sold · ${formatCurrency(stats.data.data.revenue)} revenue`
+            : ''}
         </p>
       )}
 
