@@ -245,7 +245,7 @@ function DebugPage() {
   // instead of only what this page applied itself.
   const chaosState = useQuery({
     queryKey: ['debug', 'chaos'],
-    queryFn: async () => (await getDebugChaos({ throwOnError: true })).data,
+    queryFn: async () => (await getDebugChaos({ throwOnError: true })).data.data,
   })
   const activeChaosTargets = useMemo(
     () => (chaosState.data?.targets ?? []).filter((t) => t.active),
