@@ -317,6 +317,7 @@ export interface components {
       "createdAt": string;
       "revokedAt": string | null;
       "expiresAt": string | null;
+      "lastUsedAt": string | null;
     };
     "ApiKeyCreated": {
       "id": string;
@@ -325,6 +326,7 @@ export interface components {
       "apiKey": string;
       "keyShownOnce": true;
       "expiresAt": string | null;
+      "lastUsedAt": string | null;
     };
     "WebhookEndpoint": {
       "id": string;
@@ -347,6 +349,14 @@ export interface components {
       "action": "fail" | "latency" | "recover" | "failure-rate" | "slow";
       "applied": boolean;
       "detail": Record<string, unknown>;
+    };
+    "ChaosStateOverview": {
+      "targets": Array<{
+          "target": "redis" | "mongo" | "worker" | "gateway";
+          "active": boolean;
+          "action": "fail" | "latency" | null;
+          "detail": Record<string, unknown>;
+        }>;
     };
   };
 }
@@ -762,6 +772,17 @@ export interface paths {
     };
   };
   "/debug/chaos": {
+    get: {
+      responses: {
+        "200": {
+          "data": components["schemas"]["ChaosStateOverview"];
+          "meta": components["schemas"]["Meta"];
+          "links": components["schemas"]["Links"];
+        };
+        "401": components["schemas"]["Problem"];
+        "403": components["schemas"]["Problem"];
+      };
+    };
     post: {
       requestBody: components["schemas"]["DebugChaosRequest"];
       responses: {

@@ -356,6 +356,7 @@ export type ApiKey = {
     createdAt: string;
     revokedAt: string | null;
     expiresAt: string | null;
+    lastUsedAt: string | null;
 };
 
 export type ApiKeyCreated = {
@@ -365,6 +366,7 @@ export type ApiKeyCreated = {
     apiKey: string;
     keyShownOnce: true;
     expiresAt: string | null;
+    lastUsedAt: string | null;
 };
 
 export type WebhookEndpoint = {
@@ -392,6 +394,17 @@ export type ChaosState = {
     detail: {
         [key: string]: unknown;
     };
+};
+
+export type ChaosStateOverview = {
+    targets: Array<{
+        target: 'redis' | 'mongo' | 'worker' | 'gateway';
+        active: boolean;
+        action: 'fail' | 'latency';
+        detail: {
+            [key: string]: unknown;
+        };
+    }>;
 };
 
 export type PostV1AuthRegisterData = {
@@ -713,9 +726,9 @@ export type GetV1EventsData = {
         price_min?: number;
         price_max?: number;
         /**
-         * Allowlist: startsAt, name, createdAt, updatedAt; prefix with - for desc
+         * ending: saleEndsAt ascending, nulls last, tiebreak startsAt; date: startsAt ascending; price-asc: minPrice ascending, nulls last; price-desc: minPrice descending, nulls last
          */
-        sort?: string;
+        sort?: 'ending' | 'date' | 'price-asc' | 'price-desc';
         /**
          * Allowlist projection
          */
@@ -1549,6 +1562,39 @@ export type PostDebugLoadResponses = {
      */
     200: unknown;
 };
+
+export type GetDebugChaosData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/debug/chaos';
+};
+
+export type GetDebugChaosErrors = {
+    /**
+     * RFC 7807 problem response (401)
+     */
+    401: Problem;
+    /**
+     * RFC 7807 problem response (403)
+     */
+    403: Problem;
+};
+
+export type GetDebugChaosError = GetDebugChaosErrors[keyof GetDebugChaosErrors];
+
+export type GetDebugChaosResponses = {
+    /**
+     * Chaos state overview
+     */
+    200: {
+        data: ChaosStateOverview;
+        meta: Meta;
+        links: Links;
+    };
+};
+
+export type GetDebugChaosResponse = GetDebugChaosResponses[keyof GetDebugChaosResponses];
 
 export type PostDebugChaosData = {
     body: DebugChaosRequest;

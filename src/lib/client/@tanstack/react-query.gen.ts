@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { deleteV1ApiKeysById, deleteV1EventsById, deleteV1WebhooksEndpointsById, getHealth, getMetrics, getReady, getV1ApiKeys, getV1Events, getV1EventsById, getV1EventsByIdStats, getV1Orders, getV1OrdersById, getV1Tickets, getV1TicketsById, getV1WebhooksEndpoints, type Options, patchV1EventsById, postDebugChaos, postDebugLoad, postV1ApiKeys, postV1AuthForgotPassword, postV1AuthLogin, postV1AuthLogout, postV1AuthRefresh, postV1AuthRegister, postV1AuthResetPassword, postV1Events, postV1EventsByIdTiersBulk, postV1Orders, postV1OrdersByIdCancel, postV1OrdersByIdPay, postV1WebhooksEndpoints } from '../sdk.gen';
-import type { DeleteV1ApiKeysByIdData, DeleteV1ApiKeysByIdError, DeleteV1ApiKeysByIdResponse, DeleteV1EventsByIdData, DeleteV1EventsByIdError, DeleteV1EventsByIdResponse, DeleteV1WebhooksEndpointsByIdData, DeleteV1WebhooksEndpointsByIdError, DeleteV1WebhooksEndpointsByIdResponse, GetHealthData, GetMetricsData, GetReadyData, GetV1ApiKeysData, GetV1ApiKeysError, GetV1ApiKeysResponse, GetV1EventsByIdData, GetV1EventsByIdError, GetV1EventsByIdResponse, GetV1EventsByIdStatsData, GetV1EventsByIdStatsError, GetV1EventsByIdStatsResponse, GetV1EventsData, GetV1EventsError, GetV1EventsResponse, GetV1OrdersByIdData, GetV1OrdersByIdError, GetV1OrdersByIdResponse, GetV1OrdersData, GetV1OrdersError, GetV1OrdersResponse, GetV1TicketsByIdData, GetV1TicketsByIdError, GetV1TicketsByIdResponse, GetV1TicketsData, GetV1TicketsError, GetV1TicketsResponse, GetV1WebhooksEndpointsData, GetV1WebhooksEndpointsError, GetV1WebhooksEndpointsResponse, PatchV1EventsByIdData, PatchV1EventsByIdError, PatchV1EventsByIdResponse, PostDebugChaosData, PostDebugChaosError, PostDebugChaosResponse, PostDebugLoadData, PostDebugLoadError, PostV1ApiKeysData, PostV1ApiKeysError, PostV1ApiKeysResponse, PostV1AuthForgotPasswordData, PostV1AuthForgotPasswordError, PostV1AuthForgotPasswordResponse, PostV1AuthLoginData, PostV1AuthLoginError, PostV1AuthLoginResponse, PostV1AuthLogoutData, PostV1AuthLogoutError, PostV1AuthLogoutResponse, PostV1AuthRefreshData, PostV1AuthRefreshError, PostV1AuthRefreshResponse, PostV1AuthRegisterData, PostV1AuthRegisterError, PostV1AuthRegisterResponse, PostV1AuthResetPasswordData, PostV1AuthResetPasswordError, PostV1AuthResetPasswordResponse, PostV1EventsByIdTiersBulkData, PostV1EventsByIdTiersBulkError, PostV1EventsByIdTiersBulkResponse, PostV1EventsData, PostV1EventsError, PostV1EventsResponse, PostV1OrdersByIdCancelData, PostV1OrdersByIdCancelError, PostV1OrdersByIdCancelResponse, PostV1OrdersByIdPayData, PostV1OrdersByIdPayError, PostV1OrdersByIdPayResponse, PostV1OrdersData, PostV1OrdersError, PostV1OrdersResponse, PostV1WebhooksEndpointsData, PostV1WebhooksEndpointsError, PostV1WebhooksEndpointsResponse } from '../types.gen';
+import { deleteV1ApiKeysById, deleteV1EventsById, deleteV1WebhooksEndpointsById, getDebugChaos, getHealth, getMetrics, getReady, getV1ApiKeys, getV1Events, getV1EventsById, getV1EventsByIdStats, getV1Orders, getV1OrdersById, getV1Tickets, getV1TicketsById, getV1WebhooksEndpoints, type Options, patchV1EventsById, postDebugChaos, postDebugLoad, postV1ApiKeys, postV1AuthForgotPassword, postV1AuthLogin, postV1AuthLogout, postV1AuthRefresh, postV1AuthRegister, postV1AuthResetPassword, postV1Events, postV1EventsByIdTiersBulk, postV1Orders, postV1OrdersByIdCancel, postV1OrdersByIdPay, postV1WebhooksEndpoints } from '../sdk.gen';
+import type { DeleteV1ApiKeysByIdData, DeleteV1ApiKeysByIdError, DeleteV1ApiKeysByIdResponse, DeleteV1EventsByIdData, DeleteV1EventsByIdError, DeleteV1EventsByIdResponse, DeleteV1WebhooksEndpointsByIdData, DeleteV1WebhooksEndpointsByIdError, DeleteV1WebhooksEndpointsByIdResponse, GetDebugChaosData, GetDebugChaosError, GetDebugChaosResponse, GetHealthData, GetMetricsData, GetReadyData, GetV1ApiKeysData, GetV1ApiKeysError, GetV1ApiKeysResponse, GetV1EventsByIdData, GetV1EventsByIdError, GetV1EventsByIdResponse, GetV1EventsByIdStatsData, GetV1EventsByIdStatsError, GetV1EventsByIdStatsResponse, GetV1EventsData, GetV1EventsError, GetV1EventsResponse, GetV1OrdersByIdData, GetV1OrdersByIdError, GetV1OrdersByIdResponse, GetV1OrdersData, GetV1OrdersError, GetV1OrdersResponse, GetV1TicketsByIdData, GetV1TicketsByIdError, GetV1TicketsByIdResponse, GetV1TicketsData, GetV1TicketsError, GetV1TicketsResponse, GetV1WebhooksEndpointsData, GetV1WebhooksEndpointsError, GetV1WebhooksEndpointsResponse, PatchV1EventsByIdData, PatchV1EventsByIdError, PatchV1EventsByIdResponse, PostDebugChaosData, PostDebugChaosError, PostDebugChaosResponse, PostDebugLoadData, PostDebugLoadError, PostV1ApiKeysData, PostV1ApiKeysError, PostV1ApiKeysResponse, PostV1AuthForgotPasswordData, PostV1AuthForgotPasswordError, PostV1AuthForgotPasswordResponse, PostV1AuthLoginData, PostV1AuthLoginError, PostV1AuthLoginResponse, PostV1AuthLogoutData, PostV1AuthLogoutError, PostV1AuthLogoutResponse, PostV1AuthRefreshData, PostV1AuthRefreshError, PostV1AuthRefreshResponse, PostV1AuthRegisterData, PostV1AuthRegisterError, PostV1AuthRegisterResponse, PostV1AuthResetPasswordData, PostV1AuthResetPasswordError, PostV1AuthResetPasswordResponse, PostV1EventsByIdTiersBulkData, PostV1EventsByIdTiersBulkError, PostV1EventsByIdTiersBulkResponse, PostV1EventsData, PostV1EventsError, PostV1EventsResponse, PostV1OrdersByIdCancelData, PostV1OrdersByIdCancelError, PostV1OrdersByIdCancelResponse, PostV1OrdersByIdPayData, PostV1OrdersByIdPayError, PostV1OrdersByIdPayResponse, PostV1OrdersData, PostV1OrdersError, PostV1OrdersResponse, PostV1WebhooksEndpointsData, PostV1WebhooksEndpointsError, PostV1WebhooksEndpointsResponse } from '../types.gen';
 
 /**
  * Register a user
@@ -679,6 +679,24 @@ export const postDebugLoadMutation = (options?: Partial<Options<PostDebugLoadDat
     };
     return mutationOptions;
 };
+
+export const getDebugChaosQueryKey = (options?: Options<GetDebugChaosData>) => createQueryKey('getDebugChaos', options);
+
+/**
+ * Read current chaos state per target (admin + DEBUG_ENABLED)
+ */
+export const getDebugChaosOptions = (options?: Options<GetDebugChaosData>) => queryOptions<GetDebugChaosResponse, GetDebugChaosError, GetDebugChaosResponse, ReturnType<typeof getDebugChaosQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getDebugChaos({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getDebugChaosQueryKey(options)
+});
 
 /**
  * Inject dependency failure or latency (auto-recovers)
