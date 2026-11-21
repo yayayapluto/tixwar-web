@@ -510,15 +510,15 @@ function DebugPage() {
 
           {traces.length === 0 ? (
             connectionStatus === 'error' ? (
-              <div className="flex h-[36rem] flex-col justify-center">
+              <div className="flex min-h-[15rem] flex-col justify-center">
                 <ErrorState error={streamErrorObject} onRetry={retryStream} />
               </div>
             ) : connectionStatus === 'connecting' ? (
-              <div className="h-[36rem] overflow-hidden">
+              <div className="flex min-h-[15rem] flex-col justify-center">
                 <TraceListSkeleton />
               </div>
             ) : connectionStatus === 'paused' ? (
-              <div className="flex h-[36rem] flex-col justify-center">
+              <div className="flex min-h-[15rem] flex-col justify-center">
                 <EmptyState
                   title="Stream paused"
                   description="Resume the stream to see traces."
@@ -530,7 +530,7 @@ function DebugPage() {
                 />
               </div>
             ) : (
-              <div className="flex h-[36rem] flex-col justify-center">
+              <div className="flex min-h-[15rem] flex-col justify-center">
                 <EmptyState
                   title="No traces yet"
                   description="Connected — waiting for traces. Run a load test or wait for traffic."
