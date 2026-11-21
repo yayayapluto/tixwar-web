@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { OrderDetailSkeleton } from '@/components/skeletons'
@@ -40,6 +40,7 @@ export const Route = createFileRoute('/orders/$orderId')({
 
 function OrderDetailPage() {
   const { orderId } = Route.useParams()
+  const navigate = useNavigate()
   const query = useOrder(orderId)
   const queryClient = useQueryClient()
   const cancel = useCancelOrder()
@@ -54,7 +55,7 @@ function OrderDetailPage() {
   // whether the user was charged. Cleared when a new attempt starts.
   const [payError, setPayError] = useState(false)
 
-  // The pay mutation lives here instead of usePayOrder so the idempotency key
+  // The pay mutation lives here so the idempotency key
   // can be stable per payment attempt. The key is derived from the order id
   // and the attempt counter the API already tracks: a repeated click (or a
   // second tab) while the attempt is in flight reuses the same key, so the
@@ -123,15 +124,28 @@ function OrderDetailPage() {
   const event = eventQuery.data?.data
   const tier = event?.tiers?.find((t) => t.id === order.tierId)
 
+  // Back keeps the list filter: the list links here without search params,
+  // so there is nothing to preserve — history back returns to the filtered
+  // list. A deep link (no prior entry) falls back to the unfiltered list.
+  const goBackToOrders = () => {
+    if (window.history.length > 1) {
+      window.history.back()
+    } else {
+      navigate({ to: '/orders', search: { status: '' } })
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <Link
-        to="/orders"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline"
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={goBackToOrders}
+        className="-ml-2 h-auto px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
+        <ChevronLeft className="size-4" aria-hidden="true" />
         Back to orders
-      </Link>
+      </Button>
 
       <div className="flex items-start justify-between gap-2">
         <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold">{event?.name ?? 'Order'}</h1>
