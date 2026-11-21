@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { Eye, EyeOff } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { AuthPageSkeleton } from '@/components/skeletons'
@@ -24,6 +24,7 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 function ResetPasswordPage() {
+  const navigate = useNavigate()
   const reset = useResetPassword()
   const { token } = Route.useSearch()
   const [password, setPassword] = useState('')
@@ -46,7 +47,17 @@ function ResetPasswordPage() {
     // The mismatch is already shown live under the confirm field.
     if (passwordsMismatch) return
     setClientError(null)
-    reset.mutate({ token, password }, { onSuccess: () => setDone(true) })
+    reset.mutate(
+      { token, password },
+      {
+        onSuccess: () => {
+          setDone(true)
+          // The token has served its purpose: drop it from the address bar
+          // (same route, so the success state stays rendered in place).
+          navigate({ to: '/reset-password', replace: true })
+        },
+      },
+    )
   }
 
   return (

@@ -71,19 +71,25 @@ function ForgotPasswordPage() {
           {sentTo ? (
             <>
               <CardTitle>Check your email</CardTitle>
-              <CardDescription>We sent a reset link to {sentTo}.</CardDescription>
+              <CardDescription className="min-h-10">
+                We sent a reset link to {sentTo}.
+              </CardDescription>
             </>
           ) : (
             <>
               <CardTitle>Forgot password</CardTitle>
-              <CardDescription>
+              <CardDescription className="min-h-10">
                 Enter your email and we&apos;ll send you a link to reset your password.
               </CardDescription>
             </>
           )}
         </CardHeader>
         <CardContent>
-          <div className="min-h-56">
+          {/* Fixed slot sized to the taller success state (352px, measured
+              in headless Chromium with the production CSS): the form state
+              (220px) fits inside it, so the card keeps its height across
+              the transition instead of growing. */}
+          <div className="min-h-[352px]">
             {sentTo ? (
               <div ref={successRef} tabIndex={-1} className="space-y-4 outline-none">
                 <div className="flex items-start gap-2">

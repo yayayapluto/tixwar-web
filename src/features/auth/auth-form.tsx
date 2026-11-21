@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Check, Eye, EyeOff, X } from 'lucide-react'
+import { Check, Eye, EyeOff, LoaderCircle, X } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -113,6 +113,9 @@ export function AuthForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    // Enter submits the form even while the button is disabled, so guard
+    // here too — otherwise a second submit can fire a duplicate mutation.
+    if (isPending) return
     if (mode === 'register' && password.length < MIN_PASSWORD_LENGTH) {
       setClientError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
@@ -138,6 +141,7 @@ export function AuthForm({
             persistEmailDraft(e.target.value)
           }}
           required
+          disabled={isPending}
         />
       </div>
       <div className="space-y-2">
@@ -157,6 +161,7 @@ export function AuthForm({
             }}
             onBlur={() => setPasswordTouched(true)}
             required
+            disabled={isPending}
             className="pr-10"
           />
           <Button
@@ -165,6 +170,7 @@ export function AuthForm({
             size="icon"
             onClick={() => setShowPassword((s) => !s)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
+            disabled={isPending}
             className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             {showPassword ? (
@@ -217,6 +223,7 @@ export function AuthForm({
               id="remember-me"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
+              disabled={isPending}
             />
             <Label htmlFor="remember-me" className="cursor-pointer font-normal">
               Remember me
@@ -237,8 +244,15 @@ export function AuthForm({
           <AuthFormError error={error} showResetLink={mode === 'login'} />
         )}
       </div>
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'Loading…' : submitLabel}
+      <Button type="submit" className="w-full" disabled={isPending} aria-busy={isPending}>
+        {isPending ? (
+          <>
+            <LoaderCircle className="animate-spin" aria-hidden="true" />
+            Loading…
+          </>
+        ) : (
+          submitLabel
+        )}
       </Button>
     </form>
   )

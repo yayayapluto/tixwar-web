@@ -13,7 +13,15 @@ export const Route = createFileRoute('/register')({
     return {}
   },
   beforeLoad: ({ search }) => {
-    if (getSession()) throw redirect({ to: search.redirect ?? '/events' })
+    if (getSession()) {
+      // The destination varies (search.redirect ?? '/events'), so there is
+      // no single destination route that could consume a ?reason= param —
+      // say it here instead. The Toaster lives in the root route, so the
+      // toast survives the redirect, and the app configures no route
+      // preloading, so beforeLoad only runs on a real navigation.
+      toast("You're already logged in", { variant: 'success' })
+      throw redirect({ to: search.redirect ?? '/events' })
+    }
   },
   component: RegisterPage,
   pendingComponent: () => <AuthPageSkeleton variant="register" />,
