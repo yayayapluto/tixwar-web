@@ -110,6 +110,10 @@ export function AuthForm({
   const [clientError, setClientError] = useState<string | null>(null)
   const [passwordTouched, setPasswordTouched] = useState(false)
   const passwordLengthMet = password.length >= MIN_PASSWORD_LENGTH
+  // In login mode the identifier can be an email address or the admin alias
+  // "admin", so the field must not be an email input (the browser would
+  // block a non-email value). Register still requires a real email.
+  const isLogin = mode === 'login'
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -127,13 +131,13 @@ export function AuthForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{isLogin ? 'Email or username' : 'Email'}</Label>
         <Input
           id="email"
-          type="email"
-          inputMode="email"
+          type={isLogin ? 'text' : 'email'}
+          inputMode={isLogin ? 'text' : 'email'}
           enterKeyHint="next"
-          autoComplete="email"
+          autoComplete={isLogin ? 'username' : 'email'}
           autoFocus
           value={email}
           onChange={(e) => {
