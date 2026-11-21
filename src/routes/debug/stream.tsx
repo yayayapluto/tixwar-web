@@ -386,28 +386,26 @@ function DebugPage() {
         </p>
       </div>
 
-      <div className="min-h-[114px] sm:min-h-[106px]">
-        {activeChaosTargets.length > 0 && (
-          <Alert variant="destructive" role="status" className="space-y-2 rounded-xl p-3">
-            {activeChaosTargets.map((target) => (
-              <div key={target.target} className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-destructive tabular-nums">
-                  Chaos active: {chaosTargetSummary(target)}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => applyChaos({ target: target.target, action: 'recover' })}
-                  disabled={chaos.isPending}
-                >
-                  Recover {target.target}
-                </Button>
-              </div>
-            ))}
-          </Alert>
-        )}
-      </div>
+      {activeChaosTargets.length > 0 && (
+        <Alert variant="destructive" role="status" className="space-y-2 rounded-xl p-3">
+          {activeChaosTargets.map((target) => (
+            <div key={target.target} className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-destructive tabular-nums">
+                Chaos active: {chaosTargetSummary(target)}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => applyChaos({ target: target.target, action: 'recover' })}
+                disabled={chaos.isPending}
+              >
+                Recover {target.target}
+              </Button>
+            </div>
+          ))}
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
