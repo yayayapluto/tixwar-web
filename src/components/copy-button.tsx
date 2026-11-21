@@ -3,6 +3,37 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
+// The async Clipboard API needs a secure context, so on plain-http origins
+// (like the public tunnel URL) navigator.clipboard is undefined and every
+// copy fails. Fall back to the legacy textarea + execCommand path, which
+// still works there. Only report success when the copy really happened,
+// otherwise the Check icon would lie about a value the user never got.
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Fall through to the legacy path below.
+  }
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.top = '0'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(textarea)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 export function CopyButton({
   value,
   label,
@@ -32,12 +63,7 @@ export function CopyButton({
   }, [copied])
 
   async function handleCopy() {
-    try {
-      // Clipboard can reject (permission denied, non-secure context):
-      // only report success when the copy really happened, otherwise the
-      // Check icon would lie about a code the user never got.
-      await navigator.clipboard.writeText(value)
-    } catch {
+    if (!(await copyText(value))) {
       toast(`Gagal menyalin ${label}. Coba lagi.`, { variant: 'error' })
       return
     }
