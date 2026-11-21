@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('relative overflow-hidden rounded-md bg-muted', className)}
+      className={cn('relative overflow-hidden rounded-none bg-muted', className)}
       aria-hidden="true"
       {...props}
     >

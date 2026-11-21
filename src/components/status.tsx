@@ -69,7 +69,7 @@ export function ListSkeleton({ rows = 3 }: { rows?: number }) {
       <span className="sr-only">Loading…</span>
       {Array.from({ length: rows }, (_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static rows, never reordered
-        <div key={i} className="space-y-2 rounded-xl border p-4">
+        <div key={i} className="space-y-2 rounded-none border p-4">
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-3 w-1/3" />
           <Skeleton className="h-8 w-full" />

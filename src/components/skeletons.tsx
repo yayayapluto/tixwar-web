@@ -346,11 +346,11 @@ export function TicketDetailSkeleton() {
               2x16px padding + 2px border). The old aspect-square + max-w-56
               math undershot on very narrow viewports. */}
           <div className="h-[258px]">
-            <div className="flex h-full justify-center rounded-lg border bg-white p-4">
+            <div className="flex h-full justify-center rounded-none border bg-white p-4">
               <Skeleton className="size-56" />
             </div>
           </div>
-          <div className="rounded-lg border border-transparent p-3">
+          <div className="rounded-none border border-transparent p-3">
             <Skeleton className="mx-auto h-9 w-40" />
             <Skeleton className="mx-auto h-10 w-48" />
           </div>
@@ -365,7 +365,7 @@ export function TicketDetailSkeleton() {
 
 function ApiKeyRowSkeleton() {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
+    <div className="flex items-center justify-between gap-2 rounded-none border p-3">
       <div className="min-w-0 space-y-0.5">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-4 w-24" />
@@ -485,7 +485,7 @@ export function SettingsPageSkeleton() {
 
 function TraceRowSkeleton() {
   return (
-    <article className="rounded border bg-muted/50 p-2">
+    <article className="rounded-none border bg-muted/50 p-2">
       <div className="flex flex-wrap items-center gap-2">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-5 w-16" />
