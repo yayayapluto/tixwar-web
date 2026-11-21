@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { CopyButton } from '@/components/copy-button'
 import { ApiKeysListSkeleton } from '@/components/skeletons'
 import { EmptyState, ErrorState } from '@/components/status'
@@ -49,12 +49,36 @@ function toastMutationError(error: unknown) {
   toast(mutationErrorMessage(error))
 }
 
-function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
+function ApiKeyRow({
+  apiKey,
+  onRotated,
+}: {
+  apiKey: ApiKey
+  onRotated: (created: { name: string; apiKey: string }, oldKey: ApiKey) => void
+}) {
   const revoke = useRevokeApiKey()
+  const rotate = useCreateApiKey()
   const [revokeOpen, setRevokeOpen] = useState(false)
+  // Expiry re-derived on a timer and on window focus, not just once per
+  // render: a key that expires while the page sits open must flip to
+  // Expired without waiting for a refetch.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const tick = () => setNow(Date.now())
+    const id = window.setInterval(tick, 60_000)
+    window.addEventListener('focus', tick)
+    return () => {
+      window.clearInterval(id)
+      window.removeEventListener('focus', tick)
+    }
+  }, [])
   // The API stores active:true until revoked, so expiry is derived here from
   // expiresAt; the row is a snapshot until the list refetches.
-  const isExpired = apiKey.expiresAt !== null && new Date(apiKey.expiresAt).getTime() <= Date.now()
+  const isExpired = apiKey.expiresAt !== null && new Date(apiKey.expiresAt).getTime() <= now
+  // A successor inherits the old key's expiry, so rotation is only offered
+  // while the key is still live: rotating an expired key would create a
+  // successor that is born expired.
+  const canRotate = apiKey.active && !isExpired
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
       <div className="min-w-0 space-y-0.5">
@@ -78,13 +102,33 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
           </p>
         )}
       </div>
-      <div className="flex w-44 shrink-0 items-center justify-between gap-2">
+      <div className="flex w-72 shrink-0 items-center justify-between gap-2">
         <Badge
-          variant={!apiKey.active || isExpired ? 'secondary' : 'success'}
+          variant={!apiKey.active ? 'secondary' : isExpired ? 'warning' : 'success'}
           className="min-w-[4.75rem] shrink-0 justify-center"
         >
           {!apiKey.active ? 'Revoked' : isExpired ? 'Expired' : 'Active'}
         </Badge>
+        {canRotate && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={rotate.isPending}
+            aria-label={`Rotate ${apiKey.name}`}
+            onClick={() =>
+              rotate.mutate(
+                { name: apiKey.name, expiresAt: apiKey.expiresAt ?? undefined },
+                {
+                  onSuccess: (data) => onRotated({ name: data.name, apiKey: data.apiKey }, apiKey),
+                  onError: toastMutationError,
+                },
+              )
+            }
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            {rotate.isPending ? 'Rotating…' : 'Rotate'}
+          </Button>
+        )}
         {apiKey.active && (
           <AlertDialog open={revokeOpen} onOpenChange={setRevokeOpen}>
             <AlertDialogTrigger asChild>
@@ -136,30 +180,46 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
   )
 }
 
-// Shared by the /api-keys page (admin shortcut) and the Developer section of
-// /settings (regular users). The API scopes keys per owner for non-admins, so
-// the same UI is correct for both: admins see every key, users see only theirs.
+// Shared by /api-keys (every logged-in user; admins land here from /settings)
+// and the Developer section of /settings (regular users only). The API scopes
+// keys per owner for non-admins, so the same UI is correct for both: admins
+// see every key, users see only theirs.
 export function ApiKeysManager() {
   const query = useApiKeys()
   const create = useCreateApiKey()
+  const revokeOld = useRevokeApiKey()
   const [name, setName] = useState('')
   const [expiry, setExpiry] = useState<'never' | '7' | '30' | '90'>('never')
   const [created, setCreated] = useState<{ name: string; apiKey: string } | null>(null)
   const [keyCopied, setKeyCopied] = useState(false)
   const [dismissOpen, setDismissOpen] = useState(false)
-  // null = auto: open for a first-timer or while a fresh key is on screen,
-  // collapsed for a returning user who already has keys. A manual toggle wins.
+  // The key this fresh key replaces, while its old key is still active.
+  // Set only by rotation; cleared once the old key is revoked or the new
+  // key is dismissed (the old key then simply stays active).
+  const [rotating, setRotating] = useState<{ id: string; name: string } | null>(null)
+  // null = auto: collapsed by default. A first-timer gets the one-line
+  // summary below instead of the full explainer, so the explainer no longer
+  // competes with the create form on first paint; a fresh key still opens
+  // it (created !== null). A manual toggle wins.
   const [explainerOpen, setExplainerOpen] = useState<boolean | null>(null)
-  const nameInputRef = useRef<HTMLInputElement>(null)
-
-  // Auto value captured once at mount, from whatever the list cache already
-  // knows (a revisit) — otherwise open. Never re-derive it from the live
+  // Auto value captured once at mount — never re-derived from the live
   // query: while the list is loading the query has no data, so re-deriving
   // after it resolves would collapse the explainer under a returning user
   // and shove the Create card and the list down. A manual toggle wins.
-  const [autoExplainerOpen] = useState(() => (query.data?.data.length ?? 0) === 0)
+  const [autoExplainerOpen] = useState(() => false)
   const showExplainer = explainerOpen ?? (autoExplainerOpen || created !== null)
   const exampleCurl = `curl -H "X-API-Key: ${created?.apiKey ?? '<your-key>'}" ${API_BASE_URL}/v1/events`
+  const trimmedName = name.trim()
+  const duplicateName =
+    trimmedName.length > 0 &&
+    (query.data?.data.some((key) => key.name.toLowerCase() === trimmedName.toLowerCase()) ?? false)
+
+  function handleRotated(createdKey: { name: string; apiKey: string }, oldKey: ApiKey) {
+    setCreated(createdKey)
+    setRotating({ id: oldKey.id, name: oldKey.name })
+    setKeyCopied(false)
+    toast('API key rotated', { variant: 'success' })
+  }
 
   return (
     <div className="space-y-4">
@@ -178,6 +238,13 @@ export function ApiKeysManager() {
               </Button>
             </CollapsibleTrigger>
           </CardHeader>
+          {!showExplainer && (
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                API keys let your apps call the TixWar API without a user login.
+              </p>
+            </CardContent>
+          )}
           <CollapsibleContent>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
@@ -225,9 +292,9 @@ export function ApiKeysManager() {
         <CardHeader>
           <CardTitle>Create key</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <form
-            className="flex flex-wrap gap-2"
+            className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
               e.preventDefault()
               const expiresAt =
@@ -235,10 +302,11 @@ export function ApiKeysManager() {
                   ? undefined
                   : new Date(Date.now() + Number(expiry) * 24 * 60 * 60 * 1000).toISOString()
               create.mutate(
-                { name: name.trim(), expiresAt },
+                { name: trimmedName, expiresAt },
                 {
                   onSuccess: (data) => {
                     setCreated({ name: data.name, apiKey: data.apiKey })
+                    setRotating(null)
                     setKeyCopied(false)
                     setName('')
                     setExpiry('never')
@@ -250,11 +318,8 @@ export function ApiKeysManager() {
             }}
           >
             <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor="key-name" className="sr-only">
-                Key name
-              </Label>
+              <Label htmlFor="key-name">Key name</Label>
               <Input
-                ref={nameInputRef}
                 id="key-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -263,9 +328,7 @@ export function ApiKeysManager() {
               />
             </div>
             <div className="w-44 shrink-0 space-y-2">
-              <Label htmlFor="key-expiry" className="sr-only">
-                Expiry
-              </Label>
+              <Label htmlFor="key-expiry">Expiry</Label>
               <Select value={expiry} onValueChange={(value) => setExpiry(value as typeof expiry)}>
                 <SelectTrigger id="key-expiry" aria-label="Expiry">
                   <SelectValue placeholder="Expiry" />
@@ -281,11 +344,26 @@ export function ApiKeysManager() {
             <Button
               type="submit"
               className="w-28 shrink-0"
-              disabled={create.isPending || name.trim().length === 0}
+              disabled={create.isPending || trimmedName.length === 0}
             >
               {create.isPending ? 'Creating…' : 'Create'}
             </Button>
           </form>
+          {/* Reserved slot mirroring the revoke dialog's: a failed create, or
+              a name that already exists, never shoves the list below down. */}
+          <p
+            role="alert"
+            aria-hidden={!create.isError && !duplicateName}
+            className={`min-h-5 text-sm ${
+              create.isError ? 'text-destructive' : duplicateName ? 'text-warning' : 'invisible'
+            }`}
+          >
+            {create.isError
+              ? mutationErrorMessage(create.error)
+              : duplicateName
+                ? `A key named "${trimmedName}" already exists.`
+                : ''}
+          </p>
         </CardContent>
       </Card>
 
@@ -313,6 +391,35 @@ export function ApiKeysManager() {
                 }}
               />
             </div>
+            {rotating && (
+              <p className="text-sm text-muted-foreground">
+                This key replaces {rotating.name}. Copy it, update your integrations, then revoke
+                the old key — both keys work until then.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <CopyButton
+                value={exampleCurl}
+                label="Example request"
+                textLabel="Copy example request"
+                onCopied={() => toast('Example copied', { variant: 'success' })}
+              />
+              {rotating && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!keyCopied || revokeOld.isPending}
+                  onClick={() =>
+                    revokeOld.mutate(rotating.id, {
+                      onSuccess: () => setRotating(null),
+                      onError: toastMutationError,
+                    })
+                  }
+                >
+                  {revokeOld.isPending ? 'Revoking…' : 'Revoke old key'}
+                </Button>
+              )}
+            </div>
             <AlertDialog open={dismissOpen} onOpenChange={setDismissOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" disabled={!keyCopied}>
@@ -333,6 +440,8 @@ export function ApiKeysManager() {
                     onClick={() => {
                       setCreated(null)
                       setKeyCopied(false)
+                      setRotating(null)
+                      toast('Key dismissed', { variant: 'success' })
                     }}
                   >
                     Dismiss key
@@ -355,19 +464,11 @@ export function ApiKeysManager() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data.data.length === 0 ? (
-        <EmptyState
-          title="No API keys"
-          description="Create one to integrate with the API."
-          action={
-            <Button variant="outline" size="sm" onClick={() => nameInputRef.current?.focus()}>
-              Create your first key
-            </Button>
-          }
-        />
+        <EmptyState title="No API keys" description="Create one to integrate with the API." />
       ) : (
         <div className="space-y-2">
           {query.data.data.map((key) => (
-            <ApiKeyRow key={key.id} apiKey={key} />
+            <ApiKeyRow key={key.id} apiKey={key} onRotated={handleRotated} />
           ))}
         </div>
       )}

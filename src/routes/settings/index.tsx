@@ -1,14 +1,33 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { useState } from 'react'
 import { SettingsPageSkeleton } from '@/components/skeletons'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ApiKeysManager } from '@/features/api-keys/api-keys-manager'
 import { requireAuth } from '@/features/auth/route-guard'
-import { useSession } from '@/features/auth/use-auth'
+import { useLogout, useSession } from '@/features/auth/use-auth'
 
 export const Route = createFileRoute('/settings/')({
   beforeLoad: () => {
-    requireAuth()
+    const session = requireAuth()
+    // One canonical home for API keys: admins go to /api-keys, where they
+    // see every key. /settings stays the regular user's home, so nobody
+    // lands on a key list with no owner shown.
+    if (session.user.role === 'admin') {
+      throw redirect({ to: '/api-keys' })
+    }
   },
   component: SettingsPage,
   pendingComponent: SettingsPageSkeleton,
@@ -16,7 +35,8 @@ export const Route = createFileRoute('/settings/')({
 
 function SettingsPage() {
   const session = useSession()
-  const isAdmin = session?.user.role === 'admin'
+  const logout = useLogout()
+  const [logoutOpen, setLogoutOpen] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -34,12 +54,45 @@ function SettingsPage() {
             </div>
             <div className="flex items-center justify-between gap-2">
               <p className="shrink-0 text-sm text-muted-foreground">Role</p>
-              <Badge
-                variant={isAdmin ? 'default' : 'secondary'}
-                className="min-w-[5.5rem] shrink-0 justify-center"
-              >
-                {isAdmin ? 'Admin' : 'Customer'}
+              <Badge variant="secondary" className="min-w-[5.5rem] shrink-0 justify-center">
+                Customer
               </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="shrink-0 text-sm text-muted-foreground">Password</p>
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Change password
+              </Link>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="shrink-0 text-sm text-muted-foreground">Sign out</p>
+              <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Sign out
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Log out?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You&apos;ll be signed out on this device and need to log in again to continue.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className={buttonVariants({ variant: 'destructive' })}
+                      onClick={() => logout.mutate()}
+                    >
+                      Log out
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>
