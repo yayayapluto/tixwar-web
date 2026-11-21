@@ -91,6 +91,10 @@ function OrderDetailPage() {
       ? secondsLeft
       : null
   const urgent = countdownSeconds !== null && countdownSeconds < 60
+  const showCountdown = payable || order.status === 'PAYMENT_QUEUED'
+  // Inside the countdown block the timer reads "Expired" once the clock hits
+  // zero, instead of the whole block unmounting (see the block below).
+  const timerExpired = showCountdown && countdownSeconds === null
   const payDisabled = pay.isPending || queued || secondsLeft === 0
   const payKey = `pay-${order.id}-attempt-${order.paymentAttempts}`
 
@@ -119,28 +123,40 @@ function OrderDetailPage() {
           <CardTitle className="text-base">Order summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
-          {countdownSeconds !== null && (
+          {showCountdown && (
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Time left to pay</p>
+              {/* The timer line never unmounts: at 0 it reads "Expired" in the
+                  same text-3xl tabular-nums line, so the second -> "Expired"
+                  transition and the <60s colour change move no element. */}
               <p
                 role="timer"
                 className={
-                  urgent
-                    ? 'text-3xl font-semibold tabular-nums text-destructive'
-                    : 'text-3xl font-semibold tabular-nums'
+                  urgent || timerExpired
+                    ? 'text-3xl font-semibold tabular-nums whitespace-nowrap text-destructive'
+                    : 'text-3xl font-semibold tabular-nums whitespace-nowrap'
                 }
               >
-                {formatCountdown(countdownSeconds)}
+                {countdownSeconds !== null ? formatCountdown(countdownSeconds) : 'Expired'}
               </p>
-              {urgent && (
-                <p className="font-medium text-destructive">
-                  Less than a minute left — pay now or the tickets are released.
-                </p>
-              )}
+              {/* Warning line is always rendered (invisible when not urgent):
+                  it wraps to two lines on narrow screens, and rendering the
+                  same text in both states keeps its height identical, so
+                  crossing the 60s threshold cannot push the summary down. */}
+              <p
+                aria-hidden={!urgent}
+                className={
+                  urgent ? 'font-medium text-destructive' : 'invisible font-medium text-destructive'
+                }
+              >
+                Less than a minute left — pay now or the tickets are released.
+              </p>
             </div>
           )}
           <div className="space-y-1">
-            <p className="font-medium">
+            {/* Single line: truncate keeps the height fixed when the event
+                name/tier swaps in after useEvent resolves. */}
+            <p className="truncate font-medium">
               {tier ? `${tier.name} · ` : ''}
               {event ? (
                 <Link
@@ -154,12 +170,12 @@ function OrderDetailPage() {
                 order.eventId
               )}
             </p>
-            {event && (
-              <p className="text-muted-foreground">
-                {formatDate(event.startsAt)} · {event.venue}, {event.city}
-              </p>
-            )}
-            <p className="text-muted-foreground">
+            {/* Date line is always rendered (blank while the event loads) so
+                the lines below never drop when useEvent resolves. */}
+            <p className="truncate text-muted-foreground">
+              {event ? `${formatDate(event.startsAt)} · ${event.venue}, ${event.city}` : ' '}
+            </p>
+            <p className="truncate text-muted-foreground tabular-nums">
               {order.quantity}× {formatCurrency(order.unitPrice)} ={' '}
               <span className="font-medium text-foreground">{formatCurrency(order.total)}</span>
             </p>
@@ -168,18 +184,81 @@ function OrderDetailPage() {
             <span className="min-w-0 flex-1 truncate">Order {order.id}</span>
             <CopyButton value={order.id} label="Order ID" />
           </p>
-          {queued && (
-            <p role="status" className="flex items-center gap-2 text-muted-foreground">
-              <span
-                className="size-2 shrink-0 animate-pulse rounded-full bg-primary"
-                aria-hidden="true"
-              />
-              Payment processing… Status updates automatically.
-            </p>
-          )}
+          {/* Queued line is always rendered (invisible until a payment is
+              queued) so starting a payment cannot push the blocks below the
+              card down. The same text in both states keeps its wrapped
+              height identical. */}
+          <p
+            role="status"
+            aria-hidden={!queued}
+            className={
+              queued
+                ? 'flex items-center gap-2 text-muted-foreground'
+                : 'invisible flex items-center gap-2 text-muted-foreground'
+            }
+          >
+            <span
+              className="size-2 shrink-0 animate-pulse rounded-full bg-primary"
+              aria-hidden="true"
+            />
+            Payment processing… Status updates automatically.
+          </p>
         </CardContent>
       </Card>
 
+      <div className="space-y-2">
+        {payable && !expired ? (
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => pay.mutate({ id: order.id, key: payKey })}
+            disabled={payDisabled}
+          >
+            {pay.isPending
+              ? 'Paying…'
+              : queued
+                ? 'Payment processing…'
+                : order.status === 'PAYMENT_FAILED'
+                  ? `Retry payment · ${formatCurrency(order.total)}`
+                  : `Pay ${formatCurrency(order.total)}`}
+          </Button>
+        ) : cancelable && !expired ? (
+          // Reserve the Pay button's h-12 slot while PAYMENT_QUEUED so the
+          // Cancel button below keeps its position when Pay unmounts.
+          <div aria-hidden="true" className="h-12 w-full" />
+        ) : null}
+        {cancelable && !expired && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full" disabled={cancel.isPending || queued}>
+                {cancel.isPending ? 'Cancelling…' : 'Cancel order'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This cancels the order and releases the reservation. This can&apos;t be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep order</AlertDialogCancel>
+                <AlertDialogAction
+                  className={buttonVariants({ variant: 'destructive' })}
+                  onClick={() => cancel.mutate(order.id)}
+                >
+                  Cancel order
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {/* Status blocks live below the buttons on purpose: in every state
+          where one of them shows, both buttons are hidden, so a block
+          appearing can never push a button down — and nothing below the
+          blocks exists to shift. */}
       {expired && (
         <div role="status" className="space-y-2 rounded-lg border p-4">
           <p className="font-medium">This order expired</p>
@@ -230,51 +309,6 @@ function OrderDetailPage() {
           This order was cancelled and the reservation released.
         </p>
       )}
-
-      <div className="space-y-2">
-        {payable && !expired && (
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={() => pay.mutate({ id: order.id, key: payKey })}
-            disabled={payDisabled}
-          >
-            {pay.isPending
-              ? 'Paying…'
-              : queued
-                ? 'Payment processing…'
-                : order.status === 'PAYMENT_FAILED'
-                  ? `Retry payment · ${formatCurrency(order.total)}`
-                  : `Pay ${formatCurrency(order.total)}`}
-          </Button>
-        )}
-        {cancelable && !expired && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="w-full" disabled={cancel.isPending || queued}>
-                {cancel.isPending ? 'Cancelling…' : 'Cancel order'}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel order?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This cancels the order and releases the reservation. This can&apos;t be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep order</AlertDialogCancel>
-                <AlertDialogAction
-                  className={buttonVariants({ variant: 'destructive' })}
-                  onClick={() => cancel.mutate(order.id)}
-                >
-                  Cancel order
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
     </div>
   )
 }

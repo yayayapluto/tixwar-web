@@ -68,29 +68,43 @@ function OrderCard({ order }: { order: Order }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-1 text-sm text-muted-foreground">
-        {tier && <p>{tier.name}</p>}
-        {event && <p>{formatDate(event.startsAt)}</p>}
-        <p>
+        {/* Tier + date lines are always rendered (blank while the event is
+            still loading) so the card never grows when useEvent resolves:
+            without the reserve, two lines pop in and every card below shifts. */}
+        <p className="truncate">{tier?.name ?? ' '}</p>
+        <p className="truncate">{event ? formatDate(event.startsAt) : ' '}</p>
+        <p className="truncate tabular-nums">
           {order.quantity}× {formatCurrency(order.unitPrice)} = {formatCurrency(order.total)}
         </p>
-        <p>
+        <p className="truncate">
           Order #{order.id.slice(-8)} · Created {formatDate(order.createdAt)}
         </p>
-        {order.status === 'PENDING_PAYMENT' && secondsLeft !== null && (
-          <p
-            aria-live="polite"
-            className={
-              secondsLeft < 60
-                ? 'font-medium tabular-nums text-destructive'
-                : 'font-medium tabular-nums'
-            }
-          >
-            {secondsLeft === 0 ? 'Expired' : `Expires in ${formatCountdown(secondsLeft)}`}
-          </p>
-        )}
+        {/* Countdown slot is always rendered at one fixed line height: the
+            ticking digits (tabular-nums) and the "Expired" swap at 0 change
+            text only, never the card height — and when the refetch flips the
+            status to EXPIRED the slot stays as a blank line instead of
+            collapsing. */}
+        <p
+          aria-live="polite"
+          className={
+            order.status === 'PENDING_PAYMENT' && secondsLeft !== null && secondsLeft < 60
+              ? 'min-h-5 font-medium tabular-nums text-destructive'
+              : 'min-h-5 font-medium tabular-nums'
+          }
+        >
+          {order.status === 'PENDING_PAYMENT' && secondsLeft !== null
+            ? secondsLeft === 0
+              ? 'Expired'
+              : `Expires in ${formatCountdown(secondsLeft)}`
+            : ' '}
+        </p>
       </CardContent>
-      {payAction && (
-        <CardFooter>
+      {/* Footer slot is always rendered: a pay button for payable orders, an
+          empty h-11 reserve otherwise. Every card keeps the same height, so a
+          card flipping PENDING_PAYMENT -> EXPIRED (footer unmounts) cannot
+          shift the cards below it. */}
+      <CardFooter>
+        {payAction ? (
           <Link
             to="/orders/$orderId"
             params={{ orderId: order.id }}
@@ -100,8 +114,10 @@ function OrderCard({ order }: { order: Order }) {
               ? `Retry payment · ${formatCurrency(order.total)}`
               : `Pay ${formatCurrency(order.total)}`}
           </Link>
-        </CardFooter>
-      )}
+        ) : (
+          <div aria-hidden="true" className="h-11 w-full" />
+        )}
+      </CardFooter>
     </Card>
   )
 }
