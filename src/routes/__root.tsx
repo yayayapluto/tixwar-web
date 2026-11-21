@@ -83,6 +83,8 @@ function BottomBar() {
   return (
     <nav
       ref={navRef}
+      id="primary-nav"
+      tabIndex={-1}
       aria-label="Primary"
       className="animate-bar-in fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border bg-background/90 p-1.5 shadow-lg backdrop-blur"
     >
@@ -107,14 +109,14 @@ function BottomBar() {
             aria-current={active ? 'page' : undefined}
             aria-label={item.label}
             className={cn(
-              'relative z-10 flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium whitespace-nowrap transition-[transform,color] duration-150 ease-out active:scale-[0.98]',
+              'relative z-10 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-[transform,color] duration-150 ease-out active:scale-[0.98]',
               active ? 'text-secondary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             <span key={String(active)} className={active ? 'animate-pop' : undefined}>
               <Icon className="size-4" aria-hidden="true" />
             </span>
-            <span className="hidden min-[400px]:inline">{item.label}</span>
+            <span>{item.label}</span>
           </Link>
         )
       })}
@@ -204,8 +206,26 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <div className="flex min-h-dvh flex-col">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-start gap-2 p-4">
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:pointer-events-auto focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Skip to main content
+            </a>
+            {showBottomBar && (
+              <a
+                href="#primary-nav"
+                className="sr-only focus:not-sr-only focus:pointer-events-auto focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Skip to navigation
+              </a>
+            )}
+          </div>
           <Header />
           <main
+            id="main"
+            tabIndex={-1}
             className={cn(
               'mx-auto w-full max-w-5xl flex-1 px-4 pt-6',
               showBottomBar ? 'pb-24' : 'pb-6',
