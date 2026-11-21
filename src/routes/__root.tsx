@@ -26,8 +26,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLogout, useSession } from '@/features/auth/use-auth'
 import { ThemeProvider, useTheme } from '@/features/theme/theme-context'
+import { appScrollViewportRef, scrollAppToTop } from '@/lib/app-scroll'
 import { getV1ApiKeys, getV1Events, getV1Orders, getV1Tickets } from '@/lib/client'
 import { queryClient } from '@/lib/queryClient'
 import { cn } from '@/lib/utils'
@@ -207,7 +209,7 @@ function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background">
+    <header className="z-10 border-b bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
         <Link
           to="/events"
@@ -283,10 +285,18 @@ function Header() {
 function RootComponent() {
   // Same rule as BottomBar: reserve bottom space only when the bar renders.
   const showBottomBar = useVisibleNavItems().length > 1
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // The window never scrolls (the shell below is h-dvh with internal
+  // scrolling), so the router cannot restore window scroll: the shell
+  // resets its own viewport on every navigation instead.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: effect intentionally re-runs when pathname changes; body only scrolls.
+  useLayoutEffect(() => {
+    scrollAppToTop()
+  }, [pathname])
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <div className="flex min-h-dvh flex-col">
+        <div className="relative flex h-dvh flex-col overflow-hidden">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-start gap-2 p-4">
             <a
               href="#main"
@@ -304,16 +314,15 @@ function RootComponent() {
             )}
           </div>
           <Header />
-          <main
-            id="main"
-            tabIndex={-1}
-            className={cn(
-              'mx-auto w-full max-w-5xl flex-1 px-4 pt-6',
-              showBottomBar ? 'pb-24' : 'pb-6',
-            )}
-          >
-            <Outlet />
-          </main>
+          <ScrollArea viewportRef={appScrollViewportRef} className="min-h-0 flex-1">
+            <main
+              id="main"
+              tabIndex={-1}
+              className={cn('mx-auto w-full max-w-5xl px-4 pt-6', showBottomBar ? 'pb-24' : 'pb-6')}
+            >
+              <Outlet />
+            </main>
+          </ScrollArea>
           <BottomBar />
           <Toaster />
         </div>

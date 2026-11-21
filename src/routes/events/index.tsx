@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Toggle } from '@/components/ui/toggle'
 import { useSession } from '@/features/auth/use-auth'
 import { type EventListItem, type EventStatus, useEvents } from '@/features/events/queries'
+import { scrollAppToTop } from '@/lib/app-scroll'
 import { getV1Events, getV1EventsById, getV1EventsByIdStats } from '@/lib/client'
 import { queryClient } from '@/lib/queryClient'
 import { EVENT_STATUS_VARIANT, STATUS_LABEL } from '@/lib/status'
@@ -635,11 +636,7 @@ function EventsPage() {
               <p role="status" className="text-center text-sm text-muted-foreground">
                 You&apos;ve reached the end.
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              >
+              <Button variant="outline" size="sm" onClick={() => scrollAppToTop('smooth')}>
                 Back to top
               </Button>
             </div>
