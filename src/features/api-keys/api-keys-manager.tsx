@@ -21,6 +21,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   type ApiKey,
   useApiKeys,
   useCreateApiKey,
@@ -45,6 +52,9 @@ function toastMutationError(error: unknown) {
 function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
   const revoke = useRevokeApiKey()
   const [revokeOpen, setRevokeOpen] = useState(false)
+  // The API stores active:true until revoked, so expiry is derived here from
+  // expiresAt; the row is a snapshot until the list refetches.
+  const isExpired = apiKey.expiresAt !== null && new Date(apiKey.expiresAt).getTime() <= Date.now()
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border p-3">
       <div className="min-w-0 space-y-0.5">
@@ -53,13 +63,18 @@ function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
         </p>
         <p className="font-mono text-xs text-muted-foreground">{apiKey.prefix}…</p>
         <p className="text-xs text-muted-foreground">Created {formatDate(apiKey.createdAt)}</p>
+        {apiKey.expiresAt && (
+          <p className="text-xs text-muted-foreground">
+            {isExpired ? 'Expired' : 'Expires'} {formatDate(apiKey.expiresAt)}
+          </p>
+        )}
         {!apiKey.active && apiKey.revokedAt && (
           <p className="text-xs text-muted-foreground">Revoked {formatDate(apiKey.revokedAt)}</p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={apiKey.active ? 'success' : 'secondary'}>
-          {apiKey.active ? 'Active' : 'Revoked'}
+        <Badge variant={!apiKey.active || isExpired ? 'secondary' : 'success'}>
+          {!apiKey.active ? 'Revoked' : isExpired ? 'Expired' : 'Active'}
         </Badge>
         {apiKey.active && (
           <AlertDialog open={revokeOpen} onOpenChange={setRevokeOpen}>
@@ -117,6 +132,7 @@ export function ApiKeysManager() {
   const query = useApiKeys()
   const create = useCreateApiKey()
   const [name, setName] = useState('')
+  const [expiry, setExpiry] = useState<'never' | '7' | '30' | '90'>('never')
   const [created, setCreated] = useState<{ name: string; apiKey: string } | null>(null)
   const [keyCopied, setKeyCopied] = useState(false)
   const [dismissOpen, setDismissOpen] = useState(false)
@@ -198,15 +214,23 @@ export function ApiKeysManager() {
             className="flex flex-wrap gap-2"
             onSubmit={(e) => {
               e.preventDefault()
-              create.mutate(name.trim(), {
-                onSuccess: (data) => {
-                  setCreated({ name: data.name, apiKey: data.apiKey })
-                  setKeyCopied(false)
-                  setName('')
-                  toast('API key created', { variant: 'success' })
+              const expiresAt =
+                expiry === 'never'
+                  ? undefined
+                  : new Date(Date.now() + Number(expiry) * 24 * 60 * 60 * 1000).toISOString()
+              create.mutate(
+                { name: name.trim(), expiresAt },
+                {
+                  onSuccess: (data) => {
+                    setCreated({ name: data.name, apiKey: data.apiKey })
+                    setKeyCopied(false)
+                    setName('')
+                    setExpiry('never')
+                    toast('API key created', { variant: 'success' })
+                  },
+                  onError: toastMutationError,
                 },
-                onError: toastMutationError,
-              })
+              )
             }}
           >
             <div className="flex-1 space-y-2">
@@ -221,6 +245,22 @@ export function ApiKeysManager() {
                 placeholder="Key name"
                 required
               />
+            </div>
+            <div className="w-44 space-y-2">
+              <Label htmlFor="key-expiry" className="sr-only">
+                Expiry
+              </Label>
+              <Select value={expiry} onValueChange={(value) => setExpiry(value as typeof expiry)}>
+                <SelectTrigger id="key-expiry" aria-label="Expiry">
+                  <SelectValue placeholder="Expiry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="never">No expiry</SelectItem>
+                  <SelectItem value="7">Expires in 7 days</SelectItem>
+                  <SelectItem value="30">Expires in 30 days</SelectItem>
+                  <SelectItem value="90">Expires in 90 days</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" disabled={create.isPending || name.trim().length === 0}>
               {create.isPending ? 'Creating…' : 'Create'}

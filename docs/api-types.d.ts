@@ -72,6 +72,7 @@ export interface components {
     };
     "CreateApiKeyRequest": {
       "name": string;
+      "expiresAt"?: string;
     };
     "DebugLoadRequest": {
       "scenario": "single" | "crowd" | "abuse";
@@ -315,6 +316,7 @@ export interface components {
       "active": boolean;
       "createdAt": string;
       "revokedAt": string | null;
+      "expiresAt": string | null;
     };
     "ApiKeyCreated": {
       "id": string;
@@ -322,6 +324,7 @@ export interface components {
       "prefix": string;
       "apiKey": string;
       "keyShownOnce": true;
+      "expiresAt": string | null;
     };
     "WebhookEndpoint": {
       "id": string;

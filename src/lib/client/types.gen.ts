@@ -86,6 +86,7 @@ export type CreateWebhookRequest = {
 
 export type CreateApiKeyRequest = {
     name: string;
+    expiresAt?: string;
 };
 
 export type DebugLoadRequest = {
@@ -354,6 +355,7 @@ export type ApiKey = {
     active: boolean;
     createdAt: string;
     revokedAt: string | null;
+    expiresAt: string | null;
 };
 
 export type ApiKeyCreated = {
@@ -362,6 +364,7 @@ export type ApiKeyCreated = {
     prefix: string;
     apiKey: string;
     keyShownOnce: true;
+    expiresAt: string | null;
 };
 
 export type WebhookEndpoint = {
