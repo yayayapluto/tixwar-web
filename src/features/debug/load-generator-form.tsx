@@ -1,5 +1,5 @@
-import { Activity } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Activity, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { type DebugLoadRequest, useDebugLoad } from '@/features/debug/queries'
+import { type DebugLoadRequest, isAbortError, useDebugLoad } from '@/features/debug/queries'
 import { ApiError } from '@/lib/errors'
 import { toast } from '@/lib/toast'
 
@@ -122,14 +122,17 @@ export function LoadGeneratorForm({
   })
   const [error, setError] = useState<string | null>(null)
   const [lastRun, setLastRun] = useState<LastRun | null>(null)
+  const [cancelled, setCancelled] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const abortRef = useRef<AbortController | null>(null)
 
   // Live progress while a run is in flight: the load endpoint returns only
   // when the whole run finishes, so elapsed time is the only progress the
-  // client can show. Cancel is not possible: useDebugLoad's mutation takes
-  // no AbortSignal and its mutationFn lives outside this file, so there is
-  // nothing to abort — the run finishes on the server either way.
+  // client can show. The run can be cancelled: aborting the controller
+  // stored in abortRef rejects the fetch with an AbortError, which the
+  // mutation reports as an error — the form treats that as a cancellation,
+  // not a failure.
   const running = load.isPending
   useEffect(() => {
     if (!running) return
@@ -149,24 +152,43 @@ export function LoadGeneratorForm({
   }
 
   function runConfirmed() {
-    load.mutate(form, {
-      onSuccess: (res) => {
-        const summary = parseLoadSummary(res.data)
-        setLastRun({
-          scenario: form.scenario,
-          requests: form.requests ?? 0,
-          concurrency: form.concurrency ?? 0,
-          summary,
-        })
-        toast(
-          summary
-            ? `Load test finished: ${summary.succeeded} succeeded, ${summary.failed} failed of ${summary.requests} requests`
-            : `Load test finished: ${form.scenario} · ${form.requests ?? 0} requests`,
-          { variant: 'success' },
-        )
+    setCancelled(false)
+    const controller = new AbortController()
+    abortRef.current = controller
+    load.mutate(
+      { input: form, signal: controller.signal },
+      {
+        onSuccess: (res) => {
+          const summary = parseLoadSummary(res.data)
+          setLastRun({
+            scenario: form.scenario,
+            requests: form.requests ?? 0,
+            concurrency: form.concurrency ?? 0,
+            summary,
+          })
+          toast(
+            summary
+              ? `Load test finished: ${summary.succeeded} succeeded, ${summary.failed} failed of ${summary.requests} requests`
+              : `Load test finished: ${form.scenario} · ${form.requests ?? 0} requests`,
+            { variant: 'success' },
+          )
+        },
+        onError: (error) => {
+          if (isAbortError(error)) {
+            setCancelled(true)
+            return
+          }
+          toastMutationError(error)
+        },
+        onSettled: () => {
+          abortRef.current = null
+        },
       },
-      onError: toastMutationError,
-    })
+    )
+  }
+
+  function cancelLoad() {
+    abortRef.current?.abort()
   }
 
   return (
@@ -263,15 +285,26 @@ export function LoadGeneratorForm({
           </p>
         )}
       </div>
-      <Button onClick={runLoad} disabled={running} className="w-full">
-        <Activity className="size-4" aria-hidden="true" />
-        {running ? 'Running…' : 'Run load'}
-      </Button>
+      {running ? (
+        <Button onClick={cancelLoad} variant="outline" className="w-full">
+          <X className="size-4" aria-hidden="true" />
+          Cancel run
+        </Button>
+      ) : (
+        <Button onClick={runLoad} className="w-full">
+          <Activity className="size-4" aria-hidden="true" />
+          Run load
+        </Button>
+      )}
       <div className="min-h-8">
         {running ? (
           <p className="text-xs text-muted-foreground tabular-nums" role="status">
             Running {form.scenario} · {form.requests ?? 0} requests · concurrency{' '}
-            {form.concurrency ?? 0} · {elapsed}s elapsed. The run cannot be cancelled once started.
+            {form.concurrency ?? 0} · {elapsed}s elapsed.
+          </p>
+        ) : cancelled ? (
+          <p className="text-xs text-muted-foreground tabular-nums" role="status">
+            Load test cancelled.
           </p>
         ) : (
           lastRun && (
@@ -298,7 +331,7 @@ export function LoadGeneratorForm({
                 : form.eventId
                   ? `event ${form.eventId}`
                   : 'the live sale'}
-              . It cannot be cancelled once started — only wait for it to finish.
+              . You can cancel it while it runs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
